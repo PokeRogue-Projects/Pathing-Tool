@@ -20,6 +20,7 @@ import { WeatherEffectPhase } from "./weather-effect-phase";
 import { BattlerIndex, TurnCommand } from "#app/battle";
 import { TrickRoomTag } from "#app/data/arena-tag";
 import * as LoggerTools from "../logger";
+import { SwitchType } from "#enums/switch-type";
 
 export class TurnStartPhase extends FieldPhase {
   constructor(scene: BattleScene) {
@@ -32,26 +33,8 @@ export class TurnStartPhase extends FieldPhase {
       console.log(turnCommand.targets, turnCommand.move!.targets)
       if (turnCommand.args && turnCommand.args[1] && turnCommand.args[1].isContinuing != undefined) {
         console.log(mv.getName(), targets)
-      } else {
-        LoggerTools.Actions[pokemon.getBattlerIndex()] = mv.getName()
-        if (this.scene.currentBattle.double) {
-          var targIDs = ["Self", "Self", "Ally", "L", "R"]
-          if (pokemon.getBattlerIndex() == 1) targIDs = ["Self", "Ally", "Self", "L", "R"]
-          LoggerTools.Actions[pokemon.getBattlerIndex()] += " → " + targets.map(v => targIDs[v+1])
-        } else {
-          var targIDs = ["Self", "", "", "", ""]
-          var myField = this.scene.getField()
-          if (myField[0])
-            targIDs[1] = myField[0].name
-          if (myField[1])
-            targIDs[2] = myField[1].name
-          var eField = this.scene.getEnemyField()
-          if (eField[0])
-            targIDs[3] = eField[0].name
-          if (eField[1])
-            targIDs[4] = eField[1].name
-          LoggerTools.Actions[pokemon.getBattlerIndex()] += " → " + targets.map(v => targIDs[v+1])
-        }
+      } else if (LoggerTools.Actions[pokemon.getBattlerIndex()].substring(0, 5) == "[???]") {
+        LoggerTools.Actions[pokemon.getBattlerIndex()] = mv.getName() + LoggerTools.Actions[pokemon.getBattlerIndex()].substring(5)
         console.log(mv.getName(), targets)
       }
     }
@@ -192,7 +175,6 @@ export class TurnStartPhase extends FieldPhase {
         if (!queuedMove) {
           continue;
         }
-        LoggerTools.Actions[pokemon.getBattlerIndex()] = `[[ ${new PokemonMove(queuedMove.move).getName()} unknown target ]]`
         const move = pokemon.getMoveset().find(m => m?.moveId === queuedMove.move) || new PokemonMove(queuedMove.move);
         if (move.getMove().hasAttr(MoveHeaderAttr)) {
           this.scene.unshiftPhase(new MoveHeaderPhase(this.scene, pokemon, move));
@@ -214,14 +196,11 @@ export class TurnStartPhase extends FieldPhase {
         this.scene.unshiftPhase(new AttemptCapturePhase(this.scene, turnCommand.targets![0] % 2, turnCommand.cursor!));//TODO: is the bang correct here?
         break;
       case Command.POKEMON:
-        this.scene.unshiftPhase(new SwitchSummonPhase(this.scene, pokemon.getFieldIndex(), turnCommand.cursor!, true, turnCommand.args![0] as boolean, pokemon.isPlayer()));//TODO: is the bang correct here?
-        if (pokemon.isPlayer()) {
-          //  " " + LoggerTools.playerPokeName(this.scene, pokemon) + 
-          LoggerTools.Actions[pokemon.getBattlerIndex()] = ((turnCommand.args![0] as boolean) ? "Baton" : "Switch") + " to " + LoggerTools.playerPokeName(this.scene, turnCommand.cursor!)
-        }
+        const switchType = turnCommand.args?.[0] ? SwitchType.BATON_PASS : SwitchType.SWITCH;
+        LoggerTools.Actions.push(`${switchType == SwitchType.SWITCH ? "Switch" : "Baton-Pass"} to ${this.scene.getParty()[turnCommand.cursor!].name}`)
+        this.scene.unshiftPhase(new SwitchSummonPhase(this.scene, switchType, pokemon.getFieldIndex(), turnCommand.cursor!, true, pokemon.isPlayer()));
         break;
       case Command.RUN:
-        LoggerTools.Actions[pokemon.getBattlerIndex()] = "Run from battle"
         let runningPokemon = pokemon;
         if (this.scene.currentBattle.double) {
           const playerActivePokemon = field.filter(pokemon => {
@@ -261,8 +240,12 @@ export class TurnStartPhase extends FieldPhase {
     if (LoggerTools.Actions.length > 1 && !this.scene.currentBattle.double) {
       LoggerTools.Actions.pop() // If this is a single battle, but we somehow have two actions, delete the second
     }
-    if (LoggerTools.Actions.length > 1 && (LoggerTools.Actions[0] == "" || LoggerTools.Actions[0] == undefined || LoggerTools.Actions[0] == null))
+    if (LoggerTools.Actions.length > 1 && (LoggerTools.Actions[0] == "" || LoggerTools.Actions[0] == "%SKIP" || LoggerTools.Actions[0] == undefined || LoggerTools.Actions[0] == null))
       LoggerTools.Actions.shift() // If the left slot isn't doing anything, delete its entry
+    if (LoggerTools.Actions.length > 1 && (LoggerTools.Actions[1] == "" || LoggerTools.Actions[0] == "%SKIP" || LoggerTools.Actions[1] == undefined || LoggerTools.Actions[1] == null))
+      LoggerTools.Actions.pop()  // If the right slot isn't doing anything, delete its entry
+    
+    // Log the player's actions
     LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, LoggerTools.Actions.join(" & "))
 
     /**
