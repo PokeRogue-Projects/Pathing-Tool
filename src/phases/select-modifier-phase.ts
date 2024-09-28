@@ -21,7 +21,7 @@ export class SelectModifierPhase extends BattlePhase {
   private predictionCost: integer = 0;
   private costTiers: integer[] = [];
 
-  constructor(scene: BattleScene, rerollCount: integer = 0, modifierTiers?: ModifierTier[], customModifierSettings?: CustomModifierSettings, predictionCost: integer = 0, modifierPredictions?: ModifierTypeOption[][]) {
+  constructor(scene: BattleScene, rerollCount: integer = 0, modifierTiers?: ModifierTier[], customModifierSettings?: CustomModifierSettings, predictionCost: integer = 0, modifierPredictions: ModifierTypeOption[][] = []) {
     super(scene);
 
     this.rerollCount = rerollCount;
@@ -60,11 +60,12 @@ export class SelectModifierPhase extends BattlePhase {
       //console.log(option.type.name)
     })
     //console.log("====================")
-    if (this.modifierPredictions != undefined) {
-      this.modifierPredictions[rerollOverride] = typeOptions
-      this.costTiers.push(this.predictionCost)
-      this.predictionCost += this.getRerollCost(typeOptions, false, rerollOverride)
+    if (this.modifierPredictions == undefined) {
+      this.modifierPredictions = []
     }
+    this.modifierPredictions[rerollOverride] = typeOptions
+    this.costTiers.push(this.predictionCost)
+    this.predictionCost += this.getRerollCost(typeOptions, false, rerollOverride)
     //Phaser.Math.RND.state(STATE) // Restore RNG state like nothing happened
   }
 
@@ -298,11 +299,12 @@ export class SelectModifierPhase extends BattlePhase {
       if (this.modifierPredictions == undefined) {
         // Do nothing
       } else if (true) {
+        console.log(this.modifierPredictions)
         this.modifierPredictions.forEach((mp, r) => {
           // costTiers
           console.log("Rerolls: " + r + (this.costTiers[r] != 0 ? " - ₽" + this.costTiers[r] : ""))
           mp.forEach((m, i) => {
-            console.log("  " + m.type!.name + (m.netprice != this.costTiers[r] ? " - ₽" + m.netprice : "") + " (" + (m.retriesList.length) + " tr" + (m.retriesList.length == 1 ? "y" : "ies") + ")")
+            console.log("  " + m.type!.name + (m.netprice != this.costTiers[r] ? " - ₽" + m.netprice : "") + (m.retriesList ? " (" + (m.retriesList.length) + " tr" + (m.retriesList.length == 1 ? "y" : "ies") + ")" : ""))
             if (m.eviolite) {
               console.log("    With Eviolite unlocked: " + m.eviolite.name)
             }
