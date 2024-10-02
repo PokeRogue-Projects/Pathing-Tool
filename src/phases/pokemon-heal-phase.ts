@@ -47,8 +47,7 @@ export class PokemonHealPhase extends CommonAnimPhase {
     const pokemon = this.getPokemon();
 
     if (!pokemon.isOnField() || (!this.revive && !pokemon.isActive())) {
-      super.end();
-      return;
+      return super.end();
     }
 
     const hasMessage = !!this.message;
@@ -59,7 +58,7 @@ export class PokemonHealPhase extends CommonAnimPhase {
     if (healBlock && this.hpHealed > 0) {
       this.scene.queueMessage(healBlock.onActivation(pokemon));
       this.message = null;
-      super.end();
+      return super.end();
     } else if (healOrDamage) {
       const hpRestoreMultiplier = new Utils.IntegerHolder(1);
       if (!this.revive) {
