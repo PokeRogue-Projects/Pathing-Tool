@@ -389,6 +389,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
   }
 
   calcDamage(user: PlayerPokemon, target: Pokemon, move: PokemonMove) {
+    return "";
     if (move.getMove().category == MoveData.MoveCategory.STATUS) {
       return ""; // Don't give a damage estimate for status moves
     }

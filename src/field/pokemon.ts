@@ -2419,8 +2419,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
    * @param isMax if `true`, returns the maximum damage (random power returns highest possible, crits guaranteed unless immune) (defaults to `false`).
    * @returns The move's base damage against this Pokemon when used by the source Pokemon.
    */
-  getBaseDamage(source: Pokemon, move: Move, moveCategory: MoveCategory, ignoreAbility: boolean = false, ignoreSourceAbility: boolean = false, isCritical: boolean = false, simulated: boolean = true, isMin: boolean = false, isMax: boolean = false): number {
-    if (isMin) isMax = false; // If attempting return both minimum and maximum at once, return minimum
+  getBaseDamage(source: Pokemon, move: Move, moveCategory: MoveCategory, ignoreAbility: boolean = false, ignoreSourceAbility: boolean = false, isCritical: boolean = false, simulated: boolean = true): number {
     const isPhysical = moveCategory === MoveCategory.PHYSICAL;
 
     /** A base damage multiplier based on the source's level */
@@ -2470,15 +2469,12 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
    * - `result`: {@linkcode HitResult} indicates the attack's type effectiveness.
    * - `damage`: `number` the attack's final damage output.
    */
-  getAttackDamage(source: Pokemon, move: Move, ignoreAbility: boolean = false, ignoreSourceAbility: boolean = false, isCritical: CritResult, simulated: boolean = true): DamageCalculationResult {
+  getAttackDamage(source: Pokemon, move: Move, ignoreAbility: boolean = false, ignoreSourceAbility: boolean = false, isCritical: boolean = false, simulated: boolean = true): DamageCalculationResult {
     const damage = new Utils.NumberHolder(0);
-    const damageMin = new Utils.NumberHolder(0);
-    const damageMax = new Utils.NumberHolder(0);
     const defendingSide = this.isPlayer() ? ArenaTagSide.PLAYER : ArenaTagSide.ENEMY;
 
     const variableCategory = new Utils.NumberHolder(move.category);
-    // SIM tag prevents Shell Side Arm from performing an RNG roll
-    applyMoveAttrs(VariableMoveCategoryAttr, source, this, move, variableCategory, simulated ? "SIM" : undefined);
+    applyMoveAttrs(VariableMoveCategoryAttr, source, this, move, variableCategory);
     const moveCategory = variableCategory.value as MoveCategory;
 
     /** The move's type after type-changing effects are applied */
@@ -2508,9 +2504,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
       return {
         cancelled: cancelled.value,
         result: move.id === Moves.SHEER_COLD ? HitResult.IMMUNE : HitResult.NO_EFFECT,
-        damage: 0,
-        damageHigh: 0,
-        damageLow: 0,
+        damage: 0
       };
     }
 
@@ -2521,9 +2515,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
       return {
         cancelled: false,
         result: HitResult.EFFECTIVE,
-        damage: fixedDamage.value,
-        damageHigh: fixedDamage.value,
-        damageLow: fixedDamage.value,
+        damage: fixedDamage.value
       };
     }
 
@@ -2534,9 +2526,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
       return {
         cancelled: false,
         result: HitResult.ONE_HIT_KO,
-        damage: this.hp,
-        damageHigh: this.hp,
-        damageLow: 0,
+        damage: this.hp
       };
     }
 
@@ -2544,11 +2534,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
      * The attack's base damage, as determined by the source's level, move power
      * and Attack stat as well as this Pokemon's Defense stat
      */
-    const baseDamage = this.getBaseDamage(source, move, moveCategory, ignoreAbility, ignoreSourceAbility, isCritical.isCrit, simulated);
-    /**  The minimum possible base damage, assuming the move always fails to crit, unless some effect guarantees a Critical Hit  */
-    const baseDamageMin = this.getBaseDamage(source, move, moveCategory, ignoreAbility, ignoreSourceAbility, isCritical.alwaysCrit, simulated, true);
-    /**  The maximum possible base damage, assuming the move always crits, unless some effect makes the opponent immune to Critical Hits  */
-    const baseDamageMax = this.getBaseDamage(source, move, moveCategory, ignoreAbility, ignoreSourceAbility, isCritical.canCrit, simulated, false, true);
+    const baseDamage = this.getBaseDamage(source, move, moveCategory, ignoreAbility, ignoreSourceAbility, isCritical, simulated);
 
     /** 25% damage debuff on moves hitting more than one non-fainted target (regardless of immunities) */
     const { targets, multiple } = getMoveTargets(source, move.id);
@@ -2568,7 +2554,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
     }
 
     /** The damage multiplier when the given move critically hits */
-    const criticalMultiplier = new Utils.NumberHolder(1.5);
+    const criticalMultiplier = new Utils.NumberHolder(isCritical ? 1.5 : 1);
     applyAbAttrs(MultCritAbAttr, source, null, simulated, criticalMultiplier);
 
     /**
@@ -2631,70 +2617,46 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
       ? 0.5
       : 1;
 
-    damage.value = 1
+    damage.value = Utils.toDmgValue(
+      baseDamage
       * targetMultiplier
       * parentalBondMultiplier.value
       * arenaAttackTypeMultiplier.value
       * glaiveRushMultiplier.value
+      * criticalMultiplier.value
+      * randomMultiplier
       * stabMultiplier.value
       * typeMultiplier
       * burnMultiplier.value
       * screenMultiplier.value
       * hitsTagMultiplier.value
-      * mistyTerrainMultiplier;
-    
-    damageMin.value = damage.value
-    damageMax.value = damage.value
-
-    // Base Damage
-    damage.value *= baseDamage
-    damageMin.value *= baseDamageMin
-    damageMax.value *= baseDamageMax
-
-    // Critical Hit
-    damage.value *= isCritical.isCrit ? criticalMultiplier.value : 1 // Applies crit multiplier if the attack was a Critical Hit
-    damageMin.value *= isCritical.alwaysCrit ? criticalMultiplier.value : 1 // Applies crit multiplier to minimum damage if the attack is guaranteed to crit
-    damageMax.value *= isCritical.canCrit ? criticalMultiplier.value : 1 // Applies crit multiplier to minimum damage if it is possible for the move to crit
-
-    // Random Damage
-    damage.value *= randomMultiplier // Random value between 85% and 100%, or 100% if Simulated
-    damageMin.value *= 0.85 // Lowest possible roll
-    damageMax.value *= 1 // Highest possible roll
-
-    damage.value = Utils.toDmgValue(damage.value)
-    damageMin.value = Utils.toDmgValue(damageMin.value)
-    damageMax.value = Utils.toDmgValue(damageMax.value)
-
-    var damageMultiplier = new Utils.NumberHolder(1); // General multiplier, applied to all three damage calcs (uses a NumberHolder so we don't apply abilities 3 times)
+      * mistyTerrainMultiplier
+    );
 
     /** Doubles damage if the attacker has Tinted Lens and is using a resisted move */
     if (!ignoreSourceAbility) {
-      applyPreAttackAbAttrs(DamageBoostAbAttr, source, this, move, simulated, damageMultiplier);
+      applyPreAttackAbAttrs(DamageBoostAbAttr, source, this, move, simulated, damage);
     }
 
     /** Apply the enemy's Damage and Resistance tokens */
     if (!source.isPlayer()) {
-      this.scene.applyModifiers(EnemyDamageBoosterModifier, false, damageMultiplier);
+      this.scene.applyModifiers(EnemyDamageBoosterModifier, false, damage);
     }
     if (!this.isPlayer()) {
-      this.scene.applyModifiers(EnemyDamageReducerModifier, false, damageMultiplier);
+      this.scene.applyModifiers(EnemyDamageReducerModifier, false, damage);
     }
 
     /** Apply this Pokemon's post-calc defensive modifiers (e.g. Fur Coat) */
     if (!ignoreAbility) {
-      applyPreDefendAbAttrs(ReceivedMoveDamageMultiplierAbAttr, this, source, move, cancelled, simulated, damageMultiplier);
+      applyPreDefendAbAttrs(ReceivedMoveDamageMultiplierAbAttr, this, source, move, cancelled, simulated, damage);
     }
 
     // This attribute may modify damage arbitrarily, so be careful about changing its order of application.
     applyMoveAttrs(ModifiedDamageAttr, source, this, move, damage);
 
     if (this.isFullHp() && !ignoreAbility) {
-      applyPreDefendAbAttrs(PreDefendFullHpEndureAbAttr, this, source, move, cancelled, simulated, damageMultiplier);
+      applyPreDefendAbAttrs(PreDefendFullHpEndureAbAttr, this, source, move, cancelled, false, damage);
     }
-
-    damage.value *= damageMultiplier.value
-    damageMin.value *= damageMultiplier.value
-    damageMax.value *= damageMultiplier.value
 
     // debug message for when damage is applied (i.e. not simulated)
     if (!simulated) {
@@ -2713,52 +2675,8 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
     return {
       cancelled: cancelled.value,
       result: hitResult,
-      damage: damage.value,
-      damageLow: damageMin.value,
-      damageHigh: damageMax.value,
+      damage: damage.value
     };
-  }
-
-  /**
-   * Attempts to set a move as a Critical Hit.
-   * @param source The attacking Pokémon.
-   * @param move The move that `source` is using against this Pokémon.
-   * @param simulated Suppresses changes to game state during the calculation (Defaults to `false`).
-   * @returns Whether the move was a Critical Hit, whether it could be at all, and whether it was guaranteed to be one.
-   */
-  tryCriticalHit(source: Pokemon, move: Move, simulated: boolean = false): CritResult {
-    const defendingSide = this.isPlayer() ? ArenaTagSide.PLAYER : ArenaTagSide.ENEMY;
-
-    let isCritical: boolean;
-    let canCrit = true;
-    let alwaysCrit = false;
-
-    // Calculates whether the move was a Critical Hit or not
-    const critOnly = new Utils.BooleanHolder(false);
-    const critAlways = source.getTag(BattlerTagType.ALWAYS_CRIT);
-    applyMoveAttrs(CritOnlyAttr, source, this, move, critOnly);
-    applyAbAttrs(ConditionalCritAbAttr, source, null, false, critOnly, this, move);
-    if (critOnly.value || critAlways) {
-      isCritical = true;
-      alwaysCrit = true;
-    } else {
-      const critChance = [24, 8, 2, 1][Math.max(0, Math.min(this.getCritStage(source, move), 3))];
-      isCritical = simulated ? false : (critChance === 1 || !this.scene.randBattleSeedInt(critChance));
-    }
-
-    // Determines if this Pokémon (the target) is immune to Critical Hits, and if so, set isCritical to false
-    const noCritTag = this.scene.arena.getTagOnSide(NoCritTag, defendingSide);
-    const blockCrit = new Utils.BooleanHolder(false);
-    applyAbAttrs(BlockCritAbAttr, this, null, false, blockCrit);
-    if (noCritTag || blockCrit.value || Overrides.NEVER_CRIT_OVERRIDE) {
-      isCritical = false;
-      canCrit = false;
-    }
-    return {
-      isCrit: isCritical,
-      canCrit: canCrit,
-      alwaysCrit: alwaysCrit
-    }
   }
 
   /**
@@ -2779,9 +2697,26 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
       return (typeMultiplier === 0) ? HitResult.NO_EFFECT : HitResult.STATUS;
     } else {
       /** Determines whether the attack critically hits */
-      let critical: CritResult = this.tryCriticalHit(source, move);
+      let isCritical: boolean;
+      const critOnly = new Utils.BooleanHolder(false);
+      const critAlways = source.getTag(BattlerTagType.ALWAYS_CRIT);
+      applyMoveAttrs(CritOnlyAttr, source, this, move, critOnly);
+      applyAbAttrs(ConditionalCritAbAttr, source, null, false, critOnly, this, move);
+      if (critOnly.value || critAlways) {
+        isCritical = true;
+      } else {
+        const critChance = [24, 8, 2, 1][Math.max(0, Math.min(this.getCritStage(source, move), 3))];
+        isCritical = critChance === 1 || !this.scene.randBattleSeedInt(critChance);
+      }
 
-      const { cancelled, result, damage: dmg } = this.getAttackDamage(source, move, false, false, critical, false);
+      const noCritTag = this.scene.arena.getTagOnSide(NoCritTag, defendingSide);
+      const blockCrit = new Utils.BooleanHolder(false);
+      applyAbAttrs(BlockCritAbAttr, this, null, false, blockCrit);
+      if (noCritTag || blockCrit.value || Overrides.NEVER_CRIT_OVERRIDE) {
+        isCritical = false;
+      }
+
+      const { cancelled, result, damage: dmg } = this.getAttackDamage(source, move, false, false, isCritical, false);
 
       const typeBoost = source.findTag(t => t instanceof TypeBoostTag && t.boostedType === source.getMoveType(move)) as TypeBoostTag;
       if (typeBoost?.oneUse) {
@@ -2822,7 +2757,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
          * We explicitly require to ignore the faint phase here, as we want to show the messages
          * about the critical hit and the super effective/not very effective messages before the faint phase.
          */
-        const damage = this.damageAndUpdate(isBlockedBySubstitute ? 0 : dmg, result as DamageResult, critical.isCrit, isOneHitKo, isOneHitKo, true);
+        const damage = this.damageAndUpdate(isBlockedBySubstitute ? 0 : dmg, result as DamageResult, isCritical, isOneHitKo, isOneHitKo, true);
 
         if (damage > 0) {
           if (source.isPlayer()) {
@@ -2835,7 +2770,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
           source.turnData.currDamageDealt = damage;
           this.turnData.damageTaken += damage;
           this.battleData.hitCount++;
-          const attackResult = { move: move.id, result: result as DamageResult, damage: damage, critical: critical.isCrit, sourceId: source.id, sourceBattlerIndex: source.getBattlerIndex() };
+          const attackResult = { move: move.id, result: result as DamageResult, damage: damage, critical: isCritical, sourceId: source.id, sourceBattlerIndex: source.getBattlerIndex() };
           this.turnData.attacksReceived.unshift(attackResult);
           if (source.isPlayer() && !this.isPlayer()) {
             this.scene.applyModifiers(DamageMoneyRewardModifier, true, source, new Utils.NumberHolder(damage));
@@ -2843,7 +2778,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
         }
       }
 
-      if (critical.isCrit) {
+      if (isCritical) {
         this.scene.queueMessage(i18next.t("battle:hitResultCriticalHit"));
       }
 
@@ -4672,7 +4607,7 @@ export class EnemyPokemon extends Pokemon {
           return move.category !== MoveCategory.STATUS
             && moveTargets.some(p => {
               const doesNotFail = move.applyConditions(this, p, move) || [Moves.SUCKER_PUNCH, Moves.UPPER_HAND, Moves.THUNDERCLAP].includes(move.id);
-              return doesNotFail && p.getAttackDamage(this, move, !p.battleData.abilityRevealed, false, {isCrit: isCritical, canCrit: true, alwaysCrit: isCritical}).damage >= p.hp;
+              return doesNotFail && p.getAttackDamage(this, move, !p.battleData.abilityRevealed, false, isCritical).damage >= p.hp;
             });
         }, this);
 
@@ -5245,8 +5180,8 @@ export interface DamageCalculationResult {
   result: HitResult;
   /** The damage dealt by the move */
   damage: number;
-  damageLow: number;
-  damageHigh: number;
+  damageLow?: number;
+  damageHigh?: number;
 }
 
 /**
