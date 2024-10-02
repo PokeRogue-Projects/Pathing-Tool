@@ -2476,6 +2476,10 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
   isGuaranteedCrit(source: Pokemon, move: Move, simulated: boolean = false): boolean {
     const defendingSide = this.isPlayer() ? ArenaTagSide.PLAYER : ArenaTagSide.ENEMY;
 
+    if (!this.canBeCrit()) {
+      return false;
+    }
+
     // Calculates whether the move was a Critical Hit or not
     const critOnly = new Utils.BooleanHolder(false);
     const critAlways = source.getTag(BattlerTagType.ALWAYS_CRIT);
@@ -2500,12 +2504,12 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
    * - `result`: {@linkcode HitResult} indicates the attack's type effectiveness.
    * - `damage`: `number` the attack's final damage output.
    */
-  getAttackDamage(source: Pokemon, move: Move, ignoreAbility: boolean = false, ignoreSourceAbility: boolean = false, isCritical: boolean = false, simulated: boolean = true): DamageCalculationResult {
+  getAttackDamage(source: Pokemon, move: Move, ignoreAbility: boolean = false, ignoreSourceAbility: boolean = false, isCritical: boolean = false, simulated: boolean = true, config: 0 | 1 | 2 = 0): DamageCalculationResult {
     const damage = new Utils.NumberHolder(0);
     const defendingSide = this.isPlayer() ? ArenaTagSide.PLAYER : ArenaTagSide.ENEMY;
 
     const variableCategory = new Utils.NumberHolder(move.category);
-    applyMoveAttrs(VariableMoveCategoryAttr, source, this, move, variableCategory);
+    applyMoveAttrs(VariableMoveCategoryAttr, source, this, move, variableCategory, config && config > 0 ? "SIM" : undefined);
     const moveCategory = variableCategory.value as MoveCategory;
 
     /** The move's type after type-changing effects are applied */
@@ -2592,7 +2596,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
      * A multiplier for random damage spread in the range [0.85, 1]
      * This is always 1 for simulated calls.
      */
-    const randomMultiplier = simulated ? 1 : ((this.randSeedIntRange(85, 100, "Attack damage")) / 100);
+    const randomMultiplier = simulated ? 1 : (config === 0 ? ((this.randSeedIntRange(85, 100, "Attack damage")) / 100) : (config === 1 ? 0.85 : 1));
 
     const sourceTypes = source.getTypes();
     const sourceTeraType = source.getTeraType();
@@ -2691,7 +2695,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
 
     // debug message for when damage is applied (i.e. not simulated)
     if (!simulated) {
-      console.log("damage", damage.value, move.name);
+      console.log("damage" + (config === 0 ? "" : (config === 1 ? " (min)" : " (max)")), damage.value, move.name);
     }
 
     let hitResult: HitResult;

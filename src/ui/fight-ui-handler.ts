@@ -392,15 +392,14 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
     if (move.getMove().category == MoveData.MoveCategory.STATUS) {
       return ""; // Don't give a damage estimate for status moves
     }
-    return "";
+    //return "";
     var crit = {
-      canCrit: target.canBeCrit(user, move.getMove(), true),
+      canCrit: target.canBeCrit(),
       alwaysCrit: target.isGuaranteedCrit(user, move.getMove(), true)
     }
-    var out = target.getAttackDamage(user, move.getMove(), false, false, crit.alwaysCrit, true)
     //console.log(out)
-    var dmgHigh = out.damageHigh
-    var dmgLow = out.damageLow
+    var dmgHigh = target.getAttackDamage(user, move.getMove(), false, false, target.canBeCrit(), true).damage
+    var dmgLow = target.getAttackDamage(user, move.getMove(), false, false, target.isGuaranteedCrit(user, move.getMove(), true), true).damage
     var minHits = 1
     var maxHits = -1 // If nothing changes this value, it is set to minHits
     var mh = move.getMove().getAttrs(MoveData.MultiHitAttr)
