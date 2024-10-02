@@ -2457,6 +2457,37 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
   }
 
   /**
+   * Checks if a move can be a critical hit.
+   */
+  canBeCrit(): boolean {
+    const defendingSide = this.isPlayer() ? ArenaTagSide.PLAYER : ArenaTagSide.ENEMY;
+
+    const noCritTag = this.scene.arena.getTagOnSide(NoCritTag, defendingSide);
+    const blockCrit = new Utils.BooleanHolder(false);
+    applyAbAttrs(BlockCritAbAttr, this, null, false, blockCrit);
+    if (noCritTag || blockCrit.value || Overrides.NEVER_CRIT_OVERRIDE) {
+      return false;
+    }
+    return true;
+  }
+  /**
+   * Checks if a move can be a critical hit.
+   */
+  isGuaranteedCrit(source: Pokemon, move: Move, simulated: boolean = false): boolean {
+    const defendingSide = this.isPlayer() ? ArenaTagSide.PLAYER : ArenaTagSide.ENEMY;
+
+    // Calculates whether the move was a Critical Hit or not
+    const critOnly = new Utils.BooleanHolder(false);
+    const critAlways = source.getTag(BattlerTagType.ALWAYS_CRIT);
+    applyMoveAttrs(CritOnlyAttr, source, this, move, critOnly);
+    applyAbAttrs(ConditionalCritAbAttr, source, null, false, critOnly, this, move);
+    if (critOnly.value || critAlways) {
+      return true
+    }
+    return false;
+  }
+
+  /**
    * Calculates the damage of an attack made by another Pokemon against this Pokemon
    * @param source {@linkcode Pokemon} the attacking Pokemon
    * @param move {@linkcode Pokemon} the move used in the attack
@@ -2561,7 +2592,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
      * A multiplier for random damage spread in the range [0.85, 1]
      * This is always 1 for simulated calls.
      */
-    const randomMultiplier = simulated ? 1 : ((this.randSeedIntRange(85, 100)) / 100);
+    const randomMultiplier = simulated ? 1 : ((this.randSeedIntRange(85, 100, "Attack damage")) / 100);
 
     const sourceTypes = source.getTypes();
     const sourceTeraType = source.getTeraType();
@@ -2706,7 +2737,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
         isCritical = true;
       } else {
         const critChance = [24, 8, 2, 1][Math.max(0, Math.min(this.getCritStage(source, move), 3))];
-        isCritical = critChance === 1 || !this.scene.randBattleSeedInt(critChance);
+        isCritical = critChance === 1 || !this.scene.randBattleSeedInt(critChance, undefined, "Crit chance (1 in " + critChance + ")");
       }
 
       const noCritTag = this.scene.arena.getTagOnSide(NoCritTag, defendingSide);

@@ -30,7 +30,7 @@ export class TurnStartPhase extends FieldPhase {
   logTargets(pokemon: Pokemon, mv: PokemonMove, turnCommand: TurnCommand) {
     var targets = turnCommand.targets || turnCommand.move!.targets
     if (pokemon.isPlayer()) {
-      console.log(turnCommand.targets, turnCommand.move!.targets)
+      console.log(turnCommand.targets, turnCommand.move!.targets, LoggerTools.Actions)
       if (turnCommand.args && turnCommand.args[1] && turnCommand.args[1].isContinuing != undefined) {
         console.log(mv.getName(), targets)
       } else if (LoggerTools.Actions[pokemon.getBattlerIndex()].substring(0, 5) == "[???]") {

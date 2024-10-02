@@ -389,12 +389,15 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
   }
 
   calcDamage(user: PlayerPokemon, target: Pokemon, move: PokemonMove) {
-    return "";
     if (move.getMove().category == MoveData.MoveCategory.STATUS) {
       return ""; // Don't give a damage estimate for status moves
     }
-    var crit = target.tryCriticalHit(user, move.getMove(), true)
-    var out = target.getAttackDamage(user, move.getMove(), false, false, crit, true)
+    return "";
+    var crit = {
+      canCrit: target.canBeCrit(user, move.getMove(), true),
+      alwaysCrit: target.isGuaranteedCrit(user, move.getMove(), true)
+    }
+    var out = target.getAttackDamage(user, move.getMove(), false, false, crit.alwaysCrit, true)
     //console.log(out)
     var dmgHigh = out.damageHigh
     var dmgLow = out.damageLow

@@ -1987,7 +1987,7 @@ export function shinyCheckStep(scene: BattleScene, predictionCost: Utils.Integer
     //modifierCount.value = modifierOverride
   }
   var isOk = true;
-  const typeOptions: ModifierTypeOption[] = getPlayerModifierTypeOptions(modifierCount.value, scene.getParty(), undefined, scene, true, true);
+  const typeOptions: ModifierTypeOption[] = getPlayerModifierTypeOptions(modifierCount.value, scene.getParty());
   typeOptions.forEach((option, idx) => {
     let lastTier = option.type!.tier
     if (option.alternates && option.alternates.length > 0) {

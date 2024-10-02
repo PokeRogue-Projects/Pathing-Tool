@@ -396,10 +396,10 @@ export default class Battle {
     }
     for (var i = 0; i < offset; i++) {
       // Perform useless rolls to offset RNG counter
-      Utils.randSeedInt(5)
+      Utils.randSeedInt(5, undefined, "[RNG offset]")
     }
     for (var i = 0; i < count; i++) {
-      out.push(Utils.randSeedInt(range, min))
+      out.push(Utils.randSeedInt(range, min, `[${i+1}/${count}] ${reason}`))
     }
     console.log("[SIMULATED] " + reason + " (x" + count + (offset ? " + offset " + offset : "") + ")", out)
     Phaser.Math.RND.state(state);
