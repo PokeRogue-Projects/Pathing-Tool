@@ -1,7 +1,6 @@
 import BattleScene from "#app/battle-scene";
 import { BattlerIndex } from "#app/battle";
 import { PokemonPhase } from "./pokemon-phase";
-import * as LoggerTools from "../logger";
 
 export class ShowAbilityPhase extends PokemonPhase {
   private passive: boolean;

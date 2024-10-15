@@ -13,7 +13,6 @@ import { Mode } from "#app/ui/ui";
 import SoundFade from "phaser3-rex-plugins/plugins/soundfade";
 import { TitlePhase } from "./title-phase";
 import Overrides from "#app/overrides";
-import * as LoggerTools from "../logger";
 
 export class SelectStarterPhase extends Phase {
 
@@ -81,7 +80,7 @@ export class SelectStarterPhase extends Phase {
         starterPokemon.nickname = starter.nickname;
       }
 
-      if (this.scene.gameMode.isSplicedOnly) {
+      if (this.scene.gameMode.isSplicedOnly || Overrides.STARTER_FUSION_OVERRIDE) {
         starterPokemon.generateFusionSpecies(true);
       }
       starterPokemon.setVisible(false);

@@ -11,7 +11,6 @@ import { Command } from "#app/ui/command-ui-handler";
 import i18next from "i18next";
 import { PostSummonPhase } from "./post-summon-phase";
 import { SummonPhase } from "./summon-phase";
-import * as LoggerTools from "../logger";
 import { SubstituteTag } from "#app/data/battler-tags";
 import { SwitchType } from "#enums/switch-type";
 
@@ -66,7 +65,7 @@ export class SwitchSummonPhase extends SummonPhase {
 
     const pokemon = this.getPokemon();
 
-    if (this.switchType === SwitchType.SWITCH || this.switchType === SwitchType.MID_TURN_SWITCH) {
+    if (this.switchType === SwitchType.SWITCH) {
       (this.player ? this.scene.getEnemyField() : this.scene.getPlayerField()).forEach(enemyPokemon => enemyPokemon.removeTagsBySourceId(pokemon.id));
       const substitute = pokemon.getTag(SubstituteTag);
       if (substitute) {
@@ -107,11 +106,11 @@ export class SwitchSummonPhase extends SummonPhase {
     const switchedInPokemon = party[this.slotIndex];
     this.lastPokemon = this.getPokemon();
     applyPreSwitchOutAbAttrs(PreSwitchOutAbAttr, this.lastPokemon);
-    if ((this.switchType === SwitchType.BATON_PASS || this.switchType === SwitchType.MID_TURN_BATON_PASS) && switchedInPokemon) {
+    if (this.switchType === SwitchType.BATON_PASS && switchedInPokemon) {
       (this.player ? this.scene.getEnemyField() : this.scene.getPlayerField()).forEach(enemyPokemon => enemyPokemon.transferTagsBySourceId(this.lastPokemon.id, switchedInPokemon.id));
       if (!this.scene.findModifier(m => m instanceof SwitchEffectTransferModifier && (m as SwitchEffectTransferModifier).pokemonId === switchedInPokemon.id)) {
         const batonPassModifier = this.scene.findModifier(m => m instanceof SwitchEffectTransferModifier
-          && (m as SwitchEffectTransferModifier).pokemonId === this.lastPokemon.id) as SwitchEffectTransferModifier;
+            && (m as SwitchEffectTransferModifier).pokemonId === this.lastPokemon.id) as SwitchEffectTransferModifier;
         if (batonPassModifier && !this.scene.findModifier(m => m instanceof SwitchEffectTransferModifier && (m as SwitchEffectTransferModifier).pokemonId === switchedInPokemon.id)) {
           this.scene.tryTransferHeldItemModifier(batonPassModifier, switchedInPokemon, false);
         }
@@ -132,7 +131,7 @@ export class SwitchSummonPhase extends SummonPhase {
          * If this switch is passing a Substitute, make the switched Pokemon match the returned Pokemon's state as it left.
          * Otherwise, clear any persisting tags on the returned Pokemon.
          */
-        if (this.switchType === SwitchType.BATON_PASS || this.switchType === SwitchType.MID_TURN_BATON_PASS || this.switchType === SwitchType.SHED_TAIL) {
+        if (this.switchType === SwitchType.BATON_PASS || this.switchType === SwitchType.SHED_TAIL) {
           const substitute = this.lastPokemon.getTag(SubstituteTag);
           if (substitute) {
             switchedInPokemon.x += this.lastPokemon.getSubstituteOffset()[0];
@@ -174,9 +173,10 @@ export class SwitchSummonPhase extends SummonPhase {
     // Or compensate for force switch move if switched out pokemon is not fainted
     if (currentCommand === Command.POKEMON || lastPokemonIsForceSwitchedAndNotFainted) {
       pokemon.battleSummonData.turnCount--;
+      pokemon.battleSummonData.waveTurnCount--;
     }
 
-    if ((this.switchType === SwitchType.BATON_PASS || this.switchType === SwitchType.MID_TURN_BATON_PASS) && pokemon) {
+    if (this.switchType === SwitchType.BATON_PASS && pokemon) {
       pokemon.transferSummon(this.lastPokemon);
     } else if (this.switchType === SwitchType.SHED_TAIL && pokemon) {
       const subTag = this.lastPokemon.getTag(SubstituteTag);

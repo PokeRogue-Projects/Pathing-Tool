@@ -4,7 +4,6 @@ import { allMoves, SelfStatusMove } from "#app/data/move";
 import { Moves } from "#app/enums/moves";
 import * as Utils from "#app/utils";
 import { BattlePhase } from "./battle-phase";
-import * as LoggerTools from "../logger";
 
 export class MoveAnimTestPhase extends BattlePhase {
   private moveQueue: Moves[];
@@ -30,7 +29,7 @@ export class MoveAnimTestPhase extends BattlePhase {
     }
 
     initMoveAnim(this.scene, moveId).then(() => {
-      loadMoveAnimAssets(this.scene, [moveId], true)
+      loadMoveAnimAssets(this.scene, [ moveId ], true)
         .then(() => {
           const user = player ? this.scene.getPlayerPokemon()! : this.scene.getEnemyPokemon()!;
           const target = (player !== (allMoves[moveId] instanceof SelfStatusMove)) ? this.scene.getEnemyPokemon()! : this.scene.getPlayerPokemon()!;

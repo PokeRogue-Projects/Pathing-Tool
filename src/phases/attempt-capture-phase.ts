@@ -1,6 +1,6 @@
 import BattleScene from "#app/battle-scene";
 import { BattlerIndex } from "#app/battle";
-import { getPokeballCatchMultiplier, getPokeballAtlasKey, getPokeballTintColor, doPokeballBounceAnim, getPokeballName } from "#app/data/pokeball";
+import { getPokeballCatchMultiplier, getPokeballAtlasKey, getPokeballTintColor, doPokeballBounceAnim } from "#app/data/pokeball";
 import { getStatusEffectCatchRateMultiplier } from "#app/data/status-effect";
 import { PokeballType } from "#app/enums/pokeball";
 import { StatusEffect } from "#app/enums/status-effect";
@@ -15,31 +15,17 @@ import { Mode } from "#app/ui/ui";
 import i18next from "i18next";
 import { PokemonPhase } from "./pokemon-phase";
 import { VictoryPhase } from "./victory-phase";
-import * as LoggerTools from "../logger";
 import { SubstituteTag } from "#app/data/battler-tags";
 
 export class AttemptCapturePhase extends PokemonPhase {
-  /** The Pokeball being used. */
   private pokeballType: PokeballType;
-  /** The Pokeball sprite. */
   private pokeball: Phaser.GameObjects.Sprite;
-  /** The sprite's original Y position. */
   private originalY: number;
 
   constructor(scene: BattleScene, targetIndex: integer, pokeballType: PokeballType) {
     super(scene, BattlerIndex.ENEMY + targetIndex);
 
     this.pokeballType = pokeballType;
-  }
-
-  roll(y?: integer) {
-    var roll = (this.getPokemon() as EnemyPokemon).randSeedInt(65536, undefined, "Capture roll")
-    if (y != undefined) {
-      console.log(roll, y, roll < y)
-    } else {
-      console.log(roll)
-    }
-    return roll;
   }
 
   start() {
@@ -68,8 +54,6 @@ export class AttemptCapturePhase extends PokemonPhase {
     const x = Math.round((((_3m - _2h) * catchRate * pokeballMultiplier) / _3m) * statusMultiplier);
     const y = Math.round(65536 / Math.sqrt(Math.sqrt(255 / x)));
     const fpOffset = pokemon.getFieldPositionOffset();
-
-    LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, getPokeballName(this.pokeballType))
 
     const pokeballAtlasKey = getPokeballAtlasKey(this.pokeballType);
     this.pokeball = this.scene.addFieldSprite(16, 80, "pb", pokeballAtlasKey);
@@ -130,7 +114,7 @@ export class AttemptCapturePhase extends PokemonPhase {
                     shakeCounter.stop();
                     this.failCatch(shakeCount);
                   } else if (shakeCount++ < 3) {
-                    if (pokeballMultiplier === -1 || pokemon.randSeedInt(65536, undefined, "Capture roll") < y) {
+                    if (pokeballMultiplier === -1 || pokemon.randSeedInt(65536) < y) {
                       this.scene.playSound("se/pb_move");
                     } else {
                       shakeCounter.stop();
@@ -209,13 +193,10 @@ export class AttemptCapturePhase extends PokemonPhase {
   }
 
   catch() {
-    /** The Pokemon being caught. */
     const pokemon = this.getPokemon() as EnemyPokemon;
 
-    /** Used for achievements. */
     const speciesForm = !pokemon.fusionSpecies ? pokemon.getSpeciesForm() : pokemon.getFusionSpeciesForm();
 
-    // Achievements
     if (speciesForm.abilityHidden && (pokemon.fusionSpecies ? pokemon.fusionAbilityIndex : pokemon.abilityIndex) === speciesForm.getAbilityCount() - 1) {
       this.scene.validateAchv(achvs.HIDDEN_ABILITY);
     }
@@ -232,9 +213,8 @@ export class AttemptCapturePhase extends PokemonPhase {
       this.scene.validateAchv(achvs.CATCH_MYTHICAL);
     }
 
-    // Show its info
     this.scene.pokemonInfoContainer.show(pokemon, true);
-    // Update new IVs
+
     this.scene.gameData.updateSpeciesDexIvs(pokemon.species.getRootSpeciesId(true), pokemon.ivs);
 
     this.scene.ui.showText(i18next.t("battle:pokemonCaught", { pokemonName: getPokemonNameWithAffix(pokemon) }), null, () => {
@@ -244,7 +224,6 @@ export class AttemptCapturePhase extends PokemonPhase {
         this.removePb();
         this.end();
       };
-      LoggerTools.logCapture(this.scene, this.scene.currentBattle.waveIndex, pokemon)
       const removePokemon = () => {
         this.scene.addFaintedEnemyScore(pokemon);
         this.scene.getPlayerField().filter(p => p.isActive(true)).forEach(playerPokemon => playerPokemon.removeTagsBySourceId(pokemon.id));
@@ -269,16 +248,12 @@ export class AttemptCapturePhase extends PokemonPhase {
           }
         });
       };
-      Promise.all([pokemon.hideInfo(), this.scene.gameData.setPokemonCaught(pokemon)]).then(() => {
+      Promise.all([ pokemon.hideInfo(), this.scene.gameData.setPokemonCaught(pokemon) ]).then(() => {
         if (this.scene.getParty().length === 6) {
           const promptRelease = () => {
-            // Say that your party is full
             this.scene.ui.showText(i18next.t("battle:partyFull", { pokemonName: pokemon.getNameToRender() }), null, () => {
-              // Ask if you want to make room
               this.scene.pokemonInfoContainer.makeRoomForConfirmUi(1, true);
               this.scene.ui.setMode(Mode.CONFIRM, () => {
-                // YES
-                // Open up the party menu on the RELEASE setting
                 const newPokemon = this.scene.addPlayerPokemon(pokemon.species, pokemon.level, pokemon.abilityIndex, pokemon.formIndex, pokemon.gender, pokemon.shiny, pokemon.variant, pokemon.ivs, pokemon.nature, pokemon);
                 this.scene.ui.setMode(Mode.SUMMARY, newPokemon, 0, SummaryUiMode.DEFAULT, () => {
                   this.scene.ui.setMode(Mode.MESSAGE).then(() => {
@@ -294,10 +269,8 @@ export class AttemptCapturePhase extends PokemonPhase {
                       promptRelease();
                     }
                   });
-                }, undefined, undefined, undefined, undefined, pokemon.name);
+                });
               }, () => {
-                // NO
-                LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, "Don't keep " + pokemon.name)
                 this.scene.ui.setMode(Mode.MESSAGE).then(() => {
                   removePokemon();
                   end();
@@ -307,14 +280,12 @@ export class AttemptCapturePhase extends PokemonPhase {
           };
           promptRelease();
         } else {
-          //LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `${pokemon.name} added to party`)
           addToParty();
         }
       });
     }, 0, true);
   }
 
-  /** Remove the Poke Ball from the scene. */
   removePb() {
     this.scene.tweens.add({
       targets: this.pokeball,

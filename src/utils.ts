@@ -1,7 +1,8 @@
 import { MoneyFormat } from "#enums/money-format";
-import * as LoggerTools from "./logger"
 import { Moves } from "#enums/moves";
 import i18next from "i18next";
+
+export type nil = null | undefined;
 
 export const MissingTextureKey = "__MISSING";
 
@@ -14,7 +15,7 @@ export function randomString(length: integer, seeded: boolean = false) {
   let result = "";
 
   for (let i = 0; i < length; i++) {
-    const randomIndex = seeded ? randSeedInt(characters.length, undefined, "%HIDE") : Math.floor(Math.random() * characters.length);
+    const randomIndex = seeded ? randSeedInt(characters.length) : Math.floor(Math.random() * characters.length);
     result += characters[randomIndex];
   }
 
@@ -37,15 +38,7 @@ export function shiftCharCodes(str: string, shiftCount: integer) {
   return newStr;
 }
 
-export function clampInt(value: integer, min: integer, max: integer): integer {
-  return Math.min(Math.max(value, min), max);
-}
-
-export function rangemap(value: integer, min: integer, max: integer, outMin: integer, outMax: integer) {
-  return ((value - min) / (max - min)) * (outMax - outMin) + outMin
-}
-
-export function randGauss(stdev: number, mean: number = 0, reason?: string): number {
+export function randGauss(stdev: number, mean: number = 0): number {
   if (!stdev) {
     return 0;
   }
@@ -55,7 +48,7 @@ export function randGauss(stdev: number, mean: number = 0, reason?: string): num
   return z * stdev + mean;
 }
 
-export function randSeedGauss(stdev: number, mean: number = 0, reason?: string): number {
+export function randSeedGauss(stdev: number, mean: number = 0): number {
   if (!stdev) {
     return 0;
   }
@@ -81,15 +74,11 @@ export function padInt(value: integer, length: integer, padWith?: string): strin
 * @param range The amount of possible numbers
 * @param min The starting number
 */
-export function randInt(range: integer, min: integer = 0, reason?: string): integer {
+export function randInt(range: integer, min: integer = 0): integer {
   if (range === 1) {
     return min;
   }
-  let V = Math.floor(Math.random() * range) + min;
-  if (reason != "%HIDE") {
-    //console.log("[unseeded] " + (reason ? reason : "randInt"), V)
-  }
-  return V;
+  return Math.floor(Math.random() * range) + min;
 }
 
 /**
@@ -98,19 +87,11 @@ export function randInt(range: integer, min: integer = 0, reason?: string): inte
  * @param min The minimum integer to pick, default `0`
  * @returns A random integer between {@linkcode min} and ({@linkcode min} + {@linkcode range} - 1)
  */
-export function randSeedInt(range: integer, min: integer = 0, reason?: string): integer {
+export function randSeedInt(range: integer, min: integer = 0): integer {
   if (range <= 1) {
     return min;
   }
-  let V = Phaser.Math.RND.integerInRange(min, (range - 1) + min);
-  if (reason != "%HIDE") {
-    if (reason) {
-      console.log(reason, V)
-    } else {
-      console.error("unlabeled randSeedInt", V)
-    }
-  }
-  return V;
+  return Phaser.Math.RND.integerInRange(min, (range - 1) + min);
 }
 
 /**
@@ -118,36 +99,26 @@ export function randSeedInt(range: integer, min: integer = 0, reason?: string): 
 * @param min The lowest number
 * @param max The highest number
 */
-export function randIntRange(min: integer, max: integer, reason?: string): integer {
-  return randInt(max - min, min, reason ? reason : "randIntRange");
+export function randIntRange(min: integer, max: integer): integer {
+  return randInt(max - min, min);
 }
 
-export function randItem<T>(items: T[], reason?: string): T {
+export function randItem<T>(items: T[]): T {
   return items.length === 1
     ? items[0]
-    : items[randInt(items.length, undefined, reason ? reason : "randItem")];
+    : items[randInt(items.length)];
 }
 
-export function randSeedItem<T>(items: T[], reason?: string): T {
-  function rpick() {
-    let V = Phaser.Math.RND.pick(items)
-    console.log(reason ? reason : "randSeedItem")
-    return V;
-  }
+export function randSeedItem<T>(items: T[]): T {
   return items.length === 1
     ? items[0]
-    : rpick();
+    : Phaser.Math.RND.pick(items);
 }
 
-export function randSeedWeightedItem<T>(items: T[], reason?: string): T {
-  function rpick() {
-    let V = Phaser.Math.RND.weightedPick(items);
-    console.log(reason ? reason : "randSeedWeightedItem")
-    return V;
-  }
+export function randSeedWeightedItem<T>(items: T[]): T {
   return items.length === 1
     ? items[0]
-    : rpick();
+    : Phaser.Math.RND.weightedPick(items);
 }
 
 export function randSeedEasedWeightedItem<T>(items: T[], easingFunction: string = "Sine.easeIn"): T | null {
@@ -174,7 +145,7 @@ export function randSeedShuffle<T>(items: T[]): T[] {
   const newArray = items.slice(0);
   for (let i = items.length - 1; i > 0; i--) {
     const j = Phaser.Math.RND.integerInRange(0, i);
-    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    [ newArray[i], newArray[j] ] = [ newArray[j], newArray[i] ];
   }
   return newArray;
 }
@@ -250,7 +221,7 @@ export function formatLargeNumber(count: integer, threshold: integer): string {
 }
 
 // Abbreviations from 10^0 to 10^33
-const AbbreviationsLargeNumber: string[] = ["", "K", "M", "B", "t", "q", "Q", "s", "S", "o", "n", "d"];
+const AbbreviationsLargeNumber: string[] = [ "", "K", "M", "B", "t", "q", "Q", "s", "S", "o", "n", "d" ];
 
 export function formatFancyLargeNumber(number: number, rounded: number = 3): string {
   let exponent: number;
@@ -299,7 +270,7 @@ export const isLocal = (
    /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/.test(window.location.hostname)) &&
   window.location.port !== "") || window.location.hostname === "";
 
-export const localServerUrl = import.meta.env.VITE_SERVER_URL ?? `http://${window.location.hostname}:${window.location.port+1}`;
+export const localServerUrl = import.meta.env.VITE_SERVER_URL ?? `http://${window.location.hostname}:${window.location.port + 1}`;
 
 // Set the server URL based on whether it's local or not
 export const apiUrl = localServerUrl ?? "https://api.pokerogue.net";
@@ -450,7 +421,7 @@ export function rgbToHsv(r: integer, g: integer, b: integer) {
   const v = Math.max(r, g, b);
   const c = v - Math.min(r, g, b);
   const h = c && ((v === r) ? (g - b) / c : ((v === g) ? 2 + (b - r) / c : 4 + (r - g) / c));
-  return [ 60 * (h < 0 ? h + 6 : h), v && c / v, v];
+  return [ 60 * (h < 0 ? h + 6 : h), v && c / v, v ];
 }
 
 /**
@@ -470,7 +441,7 @@ export function deltaRgb(rgb1: integer[], rgb2: integer[]): integer {
 }
 
 export function rgbHexToRgba(hex: string) {
-  const color = hex.match(/^([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i)!; // TODO: is this bang correct?
+  const color = hex.match(/^([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i) ?? [ "000000", "00", "00", "00" ];
   return {
     r: parseInt(color[1], 16),
     g: parseInt(color[2], 16),
@@ -537,7 +508,7 @@ export function verifyLang(lang?: string): boolean {
  */
 export function printContainerList(container: Phaser.GameObjects.Container): void {
   console.log(container.list.map(go => {
-    return {type: go.type, name: go.name};
+    return { type: go.type, name: go.name };
   }));
 }
 
@@ -664,4 +635,15 @@ export function isBetween(num: number, min: number, max: number): boolean {
  */
 export function animationFileName(move: Moves): string {
   return Moves[move].toLowerCase().replace(/\_/g, "-");
+}
+
+/**
+ * Transforms a camelCase string into a kebab-case string
+ * @param str The camelCase string
+ * @returns A kebab-case string
+ *
+ * @source {@link https://stackoverflow.com/a/67243723/}
+ */
+export function camelCaseToKebabCase(str: string): string {
+  return str.replace(/[A-Z]+(?![a-z])|[A-Z]/g, (s, o) => (o ? "-" : "") + s.toLowerCase());
 }

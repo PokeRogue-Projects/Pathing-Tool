@@ -6,6 +6,10 @@ const LATEST_VERSION = "1.0.5";
 
 export function applySessionDataPatches(data: SessionSaveData) {
   const curVersion = data.gameVersion;
+
+  // Always sanitize money as a safeguard
+  data.money = Math.floor(data.money);
+
   if (curVersion !== LATEST_VERSION) {
     switch (curVersion) {
     case "1.0.0":
@@ -86,7 +90,7 @@ export function applySystemDataPatches(data: SystemSaveData) {
       if (data.starterData && data.dexData) {
         // Migrate ability starter data if empty for caught species
         Object.keys(data.starterData).forEach(sd => {
-          if (data.dexData[sd].caughtAttr && !data.starterData[sd].abilityAttr) {
+          if (data.dexData[sd]?.caughtAttr && (data.starterData[sd] && !data.starterData[sd].abilityAttr)) {
             data.starterData[sd].abilityAttr = 1;
           }
         });

@@ -7,7 +7,6 @@ import { WeatherType } from "#app/enums/weather-type";
 import Pokemon, { HitResult } from "#app/field/pokemon";
 import * as Utils from "#app/utils";
 import { CommonAnimPhase } from "./common-anim-phase";
-import * as LoggerTools from "../logger";
 
 export class WeatherEffectPhase extends CommonAnimPhase {
   public weather: Weather | null;
@@ -45,7 +44,7 @@ export class WeatherEffectPhase extends CommonAnimPhase {
             return;
           }
 
-          const damage = Math.ceil(pokemon.getMaxHp() / 16);
+          const damage = Utils.toDmgValue(pokemon.getMaxHp() / 16);
 
           this.scene.queueMessage(getWeatherDamageMessage(this.weather?.weatherType!, pokemon)!); // TODO: are those bangs correct?
           pokemon.damageAndUpdate(damage, HitResult.EFFECTIVE, false, false, true);

@@ -1,5 +1,5 @@
 import { default as Pokemon } from "../field/pokemon";
-import { addTextObject, setTextStyle, TextStyle } from "./text";
+import { addTextObject, TextStyle } from "./text";
 import * as Utils from "../utils";
 import BattleScene from "#app/battle-scene";
 import Move from "#app/data/move";
@@ -8,7 +8,6 @@ import { BerryType } from "#enums/berry-type";
 import { Moves } from "#enums/moves";
 import { UiTheme } from "#enums/ui-theme";
 import { getPokemonNameWithAffix } from "#app/messages";
-import * as LoggerTools from "../logger";
 
 /** Container for info about a {@linkcode Move} */
 interface MoveInfo {
@@ -53,7 +52,7 @@ export default class BattleFlyout extends Phaser.GameObjects.Container {
   private flyoutContainer: Phaser.GameObjects.Container;
 
   /** The array of {@linkcode Phaser.GameObjects.Text} objects which are drawn on the flyout */
-  public flyoutText: Phaser.GameObjects.Text[] = new Array(4);
+  private flyoutText: Phaser.GameObjects.Text[] = new Array(4);
   /** The array of {@linkcode MoveInfo} used to track moves for the {@linkcode Pokemon} linked to the flyout */
   private moveInfo: MoveInfo[] = new Array();
 
@@ -115,8 +114,6 @@ export default class BattleFlyout extends Phaser.GameObjects.Container {
   initInfo(pokemon: Pokemon) {
     this.pokemon = pokemon;
 
-    pokemon.flyout = this;
-
     this.name = `Flyout ${getPokemonNameWithAffix(this.pokemon)}`;
     this.flyoutParent.name = `Flyout Parent ${getPokemonNameWithAffix(this.pokemon)}`;
 
@@ -125,26 +122,17 @@ export default class BattleFlyout extends Phaser.GameObjects.Container {
   }
 
   /** Sets and formats the text property for all {@linkcode Phaser.GameObjects.Text} in the flyoutText array */
-  setText(highlight?: integer) {
-    var e = this.battleScene.getEnemyField()
-    console.log(this.moveInfo.map(v => v.move.name))
+  private setText() {
     for (let i = 0; i < this.flyoutText.length; i++) {
       const flyoutText = this.flyoutText[i];
       const moveInfo = this.moveInfo[i];
 
       if (!moveInfo) {
-        const mv = this.pokemon.getMoveset()[i]
-        if (mv == undefined) {
-          flyoutText.text = ""
-          continue;
-        }
-        flyoutText.text = `${highlight == i ? ">> " : ""}${mv.getName()}${highlight == i ? " <<" : ""}`;
-        flyoutText.text = `${highlight == i ? ">> " : ""}???${highlight == i ? " <<" : ""}`;
         continue;
       }
 
       const currentPp = moveInfo.maxPp - moveInfo.ppUsed;
-      flyoutText.text = `${highlight == i ? ">> " : ""}${moveInfo.move.name}  ${currentPp}/${moveInfo.maxPp}${highlight == i ? " <<" : ""}`;
+      flyoutText.text = `${moveInfo.move.name}  ${currentPp}/${moveInfo.maxPp}`;
     }
   }
 
@@ -161,12 +149,7 @@ export default class BattleFlyout extends Phaser.GameObjects.Container {
     if (foundInfo) {
       foundInfo.ppUsed = moveUsedEvent.ppUsed;
     } else {
-      var idx = this.pokemon.moveset.indexOf(this.pokemon.moveset.find((v) => (v!.getMove().id == moveUsedEvent.move.id))!)
-      if (idx == -1) {
-        this.moveInfo.push({move: moveUsedEvent.move, maxPp: moveUsedEvent.move.pp, ppUsed: moveUsedEvent.ppUsed});
-      } else {
-        this.moveInfo[idx] = {move: moveUsedEvent.move, maxPp: moveUsedEvent.move.pp, ppUsed: moveUsedEvent.ppUsed};
-      }
+      this.moveInfo.push({ move: moveUsedEvent.move, maxPp: moveUsedEvent.move.pp, ppUsed: moveUsedEvent.ppUsed });
     }
 
     this.setText();

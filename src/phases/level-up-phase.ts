@@ -8,7 +8,6 @@ import i18next from "i18next";
 import * as Utils from "#app/utils";
 import { PlayerPartyMemberPokemonPhase } from "./player-party-member-pokemon-phase";
 import { LearnMovePhase } from "./learn-move-phase";
-import * as LoggerTools from "../logger";
 
 export class LevelUpPhase extends PlayerPartyMemberPokemonPhase {
   private lastLevel: integer;
@@ -29,7 +28,7 @@ export class LevelUpPhase extends PlayerPartyMemberPokemonPhase {
       this.scene.gameData.gameStats.highestLevel = this.level;
     }
 
-    this.scene.validateAchvs(LevelAchv, new Utils.IntegerHolder(this.level));
+    this.scene.validateAchvs(LevelAchv, new Utils.NumberHolder(this.level));
 
     const pokemon = this.getPokemon();
     const prevStats = pokemon.stats.slice(0);

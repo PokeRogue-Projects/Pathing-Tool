@@ -5,7 +5,6 @@ import i18next from "i18next";
 import * as Utils from "#app/utils";
 import { PlayerPartyMemberPokemonPhase } from "./player-party-member-pokemon-phase";
 import { LevelUpPhase } from "./level-up-phase";
-import * as LoggerTools from "../logger";
 
 export class ExpPhase extends PlayerPartyMemberPokemonPhase {
   private expValue: number;

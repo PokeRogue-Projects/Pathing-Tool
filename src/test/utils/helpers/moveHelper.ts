@@ -13,8 +13,8 @@ import { GameManagerHelper } from "./gameManagerHelper";
  */
 export class MoveHelper extends GameManagerHelper {
   /**
-   * Intercepts `MoveEffectPhase` and mocks the hitCheck's
-   * return value to `true` {@linkcode MoveEffectPhase.hitCheck}.
+   * Intercepts {@linkcode MoveEffectPhase} and mocks the
+   * {@linkcode MoveEffectPhase.hitCheck | hitCheck}'s return value to `true`.
    * Used to force a move to hit.
    */
   async forceHit(): Promise<void> {
@@ -23,8 +23,8 @@ export class MoveHelper extends GameManagerHelper {
   }
 
   /**
-   * Intercepts `MoveEffectPhase` and mocks the hitCheck's
-   * return value to `false` {@linkcode MoveEffectPhase.hitCheck}.
+   * Intercepts {@linkcode MoveEffectPhase} and mocks the
+   * {@linkcode MoveEffectPhase.hitCheck | hitCheck}'s return value to `false`.
    * Used to force a move to miss.
    * @param firstTargetOnly Whether the move should force miss on the first target only, in the case of multi-target moves.
    */
@@ -52,7 +52,7 @@ export class MoveHelper extends GameManagerHelper {
       this.game.scene.ui.setMode(Mode.FIGHT, (this.game.scene.getCurrentPhase() as CommandPhase).getFieldIndex());
     });
     this.game.onNextPrompt("CommandPhase", Mode.FIGHT, () => {
-      (this.game.scene.getCurrentPhase() as CommandPhase).handleCommand(Command.FIGHT, false, movePosition, false);
+      (this.game.scene.getCurrentPhase() as CommandPhase).handleCommand(Command.FIGHT, movePosition, false);
     });
 
     if (targetIndex !== null) {

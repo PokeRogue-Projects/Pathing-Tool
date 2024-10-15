@@ -10,7 +10,6 @@ import { TurnHealModifier, EnemyTurnHealModifier, EnemyStatusEffectHealChanceMod
 import i18next from "i18next";
 import { FieldPhase } from "./field-phase";
 import { PokemonHealPhase } from "./pokemon-heal-phase";
-import * as LoggerTools from "../logger";
 
 export class TurnEndPhase extends FieldPhase {
   constructor(scene: BattleScene) {
@@ -19,8 +18,6 @@ export class TurnEndPhase extends FieldPhase {
 
   start() {
     super.start();
-
-    this.scene.arenaFlyout.updateFieldText()
 
     this.scene.currentBattle.incrementTurn(this.scene);
     this.scene.eventTarget.dispatchEvent(new TurnEndEvent(this.scene.currentBattle.turn));
@@ -47,6 +44,7 @@ export class TurnEndPhase extends FieldPhase {
       this.scene.applyModifiers(TurnHeldItemTransferModifier, pokemon.isPlayer(), pokemon);
 
       pokemon.battleSummonData.turnCount++;
+      pokemon.battleSummonData.waveTurnCount++;
     };
 
     this.executeForAll(handlePokemon);

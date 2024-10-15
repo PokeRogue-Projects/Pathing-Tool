@@ -2,7 +2,6 @@ import BattleScene from "#app/battle-scene";
 import { applyAbAttrs, PostBiomeChangeAbAttr } from "#app/data/ability";
 import { getRandomWeatherType } from "#app/data/weather";
 import { NextEncounterPhase } from "./next-encounter-phase";
-import * as LoggerTools from "../logger";
 
 export class NewBiomeEncounterPhase extends NextEncounterPhase {
   constructor(scene: BattleScene) {
@@ -23,7 +22,7 @@ export class NewBiomeEncounterPhase extends NextEncounterPhase {
     }
 
     const enemyField = this.scene.getEnemyField();
-    const moveTargets: any[]  = [this.scene.arenaEnemy, enemyField];
+    const moveTargets: any[]  = [ this.scene.arenaEnemy, enemyField ];
     const mysteryEncounter = this.scene.currentBattle?.mysteryEncounter?.introVisuals;
     if (mysteryEncounter) {
       moveTargets.push(mysteryEncounter);

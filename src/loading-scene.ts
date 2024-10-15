@@ -1,117 +1,25 @@
-import { GachaType } from "./enums/gacha-types";
-import { getBiomeHasProps } from "./field/arena";
-import CacheBustedLoaderPlugin from "./plugins/cache-busted-loader-plugin";
-import { SceneBase } from "./scene-base";
-import { WindowVariant, getWindowVariantSuffix } from "./ui/ui-theme";
-import { isMobile } from "./touch-controls";
-import * as Utils from "./utils";
-import { initI18n } from "./plugins/i18n";
-import { initPokemonPrevolutions } from "#app/data/pokemon-evolutions";
-import { initBiomes } from "#app/data/biomes";
-import { initEggMoves } from "#app/data/egg-moves";
+import { GachaType } from "#enums/gacha-types";
+import { getBiomeHasProps } from "#app/field/arena";
+import CacheBustedLoaderPlugin from "#app/plugins/cache-busted-loader-plugin";
+import { SceneBase } from "#app/scene-base";
+import { WindowVariant, getWindowVariantSuffix } from "#app/ui/ui-theme";
+import { isMobile } from "#app/touch-controls";
+import * as Utils from "#app/utils";
+import { initPokemonPrevolutions } from "#app/data/balance/pokemon-evolutions";
+import { initBiomes } from "#app/data/balance/biomes";
+import { initEggMoves } from "#app/data/balance/egg-moves";
 import { initPokemonForms } from "#app/data/pokemon-forms";
 import { initSpecies } from "#app/data/pokemon-species";
 import { initMoves } from "#app/data/move";
 import { initAbilities } from "#app/data/ability";
 import { initAchievements } from "#app/system/achv";
 import { initTrainerTypeDialogue } from "#app/data/dialogue";
-import { initChallenges } from "./data/challenge";
+import { initChallenges } from "#app/data/challenge";
 import i18next from "i18next";
-import { initStatsKeys } from "./ui/game-stats-ui-handler";
-import { initVouchers } from "./system/voucher";
+import { initStatsKeys } from "#app/ui/game-stats-ui-handler";
+import { initVouchers } from "#app/system/voucher";
 import { Biome } from "#enums/biome";
-import {initMysteryEncounters} from "#app/data/mystery-encounters/mystery-encounters";
-
-export const biomePanelIDs: string[] = [
-  "town",
-  "plains",
-  "grass",
-  "tall_grass",
-  "metropolis",
-  "forest",
-  "sea",
-  "swamp",
-  "beach",
-  "lake",
-  "seabed",
-  "mountain",
-  "badlands",
-  "cave",
-  "desert",
-  "ice_cave",
-  "meadow",
-  "power_plant",
-  "volcano",
-  "graveyard",
-  "dojo",
-  "factory",
-  "ruins",
-  "wasteland",
-  "abyss",
-  "space",
-  "construction_site",
-  "jungle",
-  "fairy_cave",
-  "temple",
-  "slum",
-  "snowy_forest",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "island",
-  "laboratory",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "end"
-]
-export const allpanels: string[] = [
-  "abyss",
-  "badlands",
-  "beach",
-  "cave",
-  "construction_site",
-  //"desert",
-  //"dojo",
-  "end",
-  //"factory",
-  //"fairy_cave",
-  //"forest",
-  //"grass",
-  //"graveyard",
-  //"ice_cave",
-  //"island",
-  //"jungle",
-  //"laboratory",
-  //"lake",
-  //"meadow",
-  //"metropolis",
-  //"mountain",
-  //"plains",
-  //"power_plant",
-  //"ruins",
-  "sea",
-  //"seabed",
-  "slum",
-  //"snowy_forest",
-  "space",
-  //"swamp",
-  //"tall_grass",
-  //"temple",
-  "town",
-  "volcano",
-  "wasteland"
-]
+import { initMysteryEncounters } from "#app/data/mystery-encounters/mystery-encounters";
 
 export class LoadingScene extends SceneBase {
   public static readonly KEY = "loading";
@@ -122,7 +30,6 @@ export class LoadingScene extends SceneBase {
     super(LoadingScene.KEY);
 
     Phaser.Plugins.PluginCache.register("Loader", CacheBustedLoaderPlugin, "load");
-    initI18n();
   }
 
   preload() {
@@ -137,50 +44,14 @@ export class LoadingScene extends SceneBase {
     this.loadAtlas("prompt", "ui");
     this.loadImage("candy", "ui");
     this.loadImage("candy_overlay", "ui");
+    this.loadImage("friendship", "ui");
+    this.loadImage("friendship_overlay", "ui");
     this.loadImage("cursor", "ui");
     this.loadImage("cursor_reverse", "ui");
     for (const wv of Utils.getEnumValues(WindowVariant)) {
       for (let w = 1; w <= 5; w++) {
         this.loadImage(`window_${w}${getWindowVariantSuffix(wv)}`, "ui/windows");
       }
-    }
-    //this.loadImage(`abyss_panel`, "ui/windows");
-//    this.loadImage(`badlands_panel`, "ui/windows");
-    //this.loadImage(`beach_panel`, "ui/windows");
-    //this.loadImage(`cave_panel`, "ui/windows");
-    //this.loadImage(`construction_site_panel`, "ui/windows");
-    //this.loadImage(`desert_panel`, "ui/windows");
-    //this.loadImage(`dojo_panel`, "ui/windows");
-//    this.loadImage(`end_panel`, "ui/windows");
-    //this.loadImage(`factory_panel`, "ui/windows");
-    //this.loadImage(`fairy_cave_panel`, "ui/windows");
-    //this.loadImage(`forest_panel`, "ui/windows");
-    //this.loadImage(`grass_panel`, "ui/windows");
-    //this.loadImage(`graveyard_panel`, "ui/windows");
-    //this.loadImage(`ice_cave_panel`, "ui/windows");
-    //this.loadImage(`island_panel`, "ui/windows");
-    //this.loadImage(`jungle_panel`, "ui/windows");
-    //this.loadImage(`laboratory_panel`, "ui/windows");
-    //this.loadImage(`lake_panel`, "ui/windows");
-    //this.loadImage(`meadow_panel`, "ui/windows");
-    //this.loadImage(`metropolis_panel`, "ui/windows");
-    //this.loadImage(`mountain_panel`, "ui/windows");
-    //this.loadImage(`plains_panel`, "ui/windows");
-    //this.loadImage(`power_plant_panel`, "ui/windows");
-     //this.loadImage(`ruins_panel`, "ui/windows");
-//    this.loadImage(`sea_panel`, "ui/windows");
-    //this.loadImage(`seabed_panel`, "ui/windows");
-    //this.loadImage(`slum_panel`, "ui/windows");
-    //this.loadImage(`snowy_forest_panel`, "ui/windows");
-//    this.loadImage(`space_panel`, "ui/windows");
-    //this.loadImage(`swamp_panel`, "ui/windows");
-    //this.loadImage(`tall_grass_panel`, "ui/windows");
-    //this.loadImage(`temple_panel`, "ui/windows");
-    //this.loadImage(`town_panel`, "ui/windows");
-//    this.loadImage(`volcano_panel`, "ui/windows");
-//    this.loadImage(`wasteland_panel`, "ui/windows");
-    for (var i = 0; i < allpanels.length; i++) {
-      this.loadImageNoLegacy(`${allpanels[i]}_panel`, "ui/windows");
     }
     this.loadAtlas("namebox", "ui");
     this.loadImage("pbinfo_player", "ui");
@@ -371,9 +242,9 @@ export class LoadingScene extends SceneBase {
       this.loadAtlas("statuses", "");
       this.loadAtlas("types", "");
     }
-    const availableLangs = ["en", "de", "it", "fr", "ja", "ko", "es", "pt-BR", "zh-CN"];
+    const availableLangs = [ "en", "de", "it", "fr", "ja", "ko", "es", "pt-BR", "zh-CN" ];
     if (lang && availableLangs.includes(lang)) {
-      this.loadImage("egg-update_"+lang, "events");
+      this.loadImage("egg-update_" + lang, "events");
     } else {
       this.loadImage("egg-update_en", "events");
     }

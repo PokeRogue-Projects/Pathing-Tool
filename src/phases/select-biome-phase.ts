@@ -1,5 +1,5 @@
 import BattleScene from "#app/battle-scene";
-import { biomeLinks, getBiomeName } from "#app/data/biomes";
+import { biomeLinks, getBiomeName } from "#app/data/balance/biomes";
 import { Biome } from "#app/enums/biome";
 import { MoneyInterestModifier, MapModifier } from "#app/modifier/modifier";
 import { OptionSelectItem } from "#app/ui/abstact-option-select-ui-handler";
@@ -8,7 +8,6 @@ import { BattlePhase } from "./battle-phase";
 import * as Utils from "#app/utils";
 import { PartyHealPhase } from "./party-heal-phase";
 import { SwitchBiomePhase } from "./switch-biome-phase";
-import * as LoggerTools from "../logger";
 
 export class SelectBiomePhase extends BattlePhase {
   constructor(scene: BattleScene) {
@@ -30,8 +29,8 @@ export class SelectBiomePhase extends BattlePhase {
     };
 
     if ((this.scene.gameMode.isClassic && this.scene.gameMode.isWaveFinal(this.scene.currentBattle.waveIndex + 9))
-      || (this.scene.gameMode.isDaily && this.scene.gameMode.isWaveFinal(this.scene.currentBattle.waveIndex))
-      || (this.scene.gameMode.hasShortBiomes && !(this.scene.currentBattle.waveIndex % 50))) {
+        || (this.scene.gameMode.isDaily && this.scene.gameMode.isWaveFinal(this.scene.currentBattle.waveIndex))
+        || (this.scene.gameMode.hasShortBiomes && !(this.scene.currentBattle.waveIndex % 50))) {
       setNextBiome(Biome.END);
     } else if (this.scene.gameMode.hasRandomBiomes) {
       setNextBiome(this.generateNextBiome());
@@ -39,16 +38,16 @@ export class SelectBiomePhase extends BattlePhase {
       let biomes: Biome[] = [];
       this.scene.executeWithSeedOffset(() => {
         biomes = (biomeLinks[currentBiome] as (Biome | [Biome, integer])[])
-          .filter(b => !Array.isArray(b) || !Utils.randSeedInt(b[1], undefined, "Choosing next biome"))
+          .filter(b => !Array.isArray(b) || !Utils.randSeedInt(b[1]))
           .map(b => !Array.isArray(b) ? b : b[0]);
       }, this.scene.currentBattle.waveIndex);
       if (biomes.length > 1 && this.scene.findModifier(m => m instanceof MapModifier)) {
         let biomeChoices: Biome[] = [];
         this.scene.executeWithSeedOffset(() => {
           biomeChoices = (!Array.isArray(biomeLinks[currentBiome])
-            ? [biomeLinks[currentBiome] as Biome]
+            ? [ biomeLinks[currentBiome] as Biome ]
             : biomeLinks[currentBiome] as (Biome | [Biome, integer])[])
-            .filter((b, i) => !Array.isArray(b) || !Utils.randSeedInt(b[1], undefined, "Choosing next biome for map"))
+            .filter((b, i) => !Array.isArray(b) || !Utils.randSeedInt(b[1]))
             .map(b => Array.isArray(b) ? b[0] : b);
         }, this.scene.currentBattle.waveIndex);
         const biomeSelectItems = biomeChoices.map(b => {
@@ -67,7 +66,7 @@ export class SelectBiomePhase extends BattlePhase {
           delay: 1000
         });
       } else {
-        setNextBiome(biomes[Utils.randSeedInt(biomes.length, undefined, "Choosing biome randomly")]);
+        setNextBiome(biomes[Utils.randSeedInt(biomes.length)]);
       }
     } else if (biomeLinks.hasOwnProperty(currentBiome)) {
       setNextBiome(biomeLinks[currentBiome] as Biome);

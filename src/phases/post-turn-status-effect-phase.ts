@@ -8,7 +8,6 @@ import { StatusEffect } from "#app/enums/status-effect";
 import { getPokemonNameWithAffix } from "#app/messages";
 import * as Utils from "#app/utils";
 import { PokemonPhase } from "./pokemon-phase";
-import * as LoggerTools from "../logger";
 
 export class PostTurnStatusEffectPhase extends PokemonPhase {
   constructor(scene: BattleScene, battlerIndex: BattlerIndex) {

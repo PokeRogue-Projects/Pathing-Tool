@@ -16,36 +16,21 @@ import { SelectModifierPhase } from "#app/phases/select-modifier-phase";
 
 enum MenuOptions {
   GAME_SETTINGS,
+  ACHIEVEMENTS,
   STATS,
-  LINKS,
   RUN_HISTORY,
   EGG_LIST,
   EGG_GACHA,
   MANAGE_DATA,
   COMMUNITY,
   SAVE_AND_QUIT,
-  SAVE_AND_REFRESH,
-  LOG_OUT
+  LOG_OUT,
 }
 
 let wikiUrl = "https://wiki.pokerogue.net/start";
 const discordUrl = "https://discord.gg/uWpTfdKG49";
 const githubUrl = "https://github.com/pagefaultgames/pokerogue";
 const redditUrl = "https://www.reddit.com/r/pokerogue";
-const links = [
-  ["Privacy Policy", "https://app.termly.io/policy-viewer/policy.html?policyUUID=bc96778b-3f04-4d25-bafc-0deba53e8bec"],
-  ["Cookie Disclaimer", "https://app.termly.io/policy-viewer/policy.html?policyUUID=8b523c05-7ec2-4646-9534-5bd61b386e2a"],
-  ["Terms & Conditions", "https://app.termly.io/policy-viewer/policy.html?policyUUID=b01e092a-9721-477f-8356-45576702ff9e"],
-  ["Acceptable Use Policy", "https://app.termly.io/policy-viewer/policy.html?policyUUID=3b5d1928-3f5b-4ee1-b8df-2d6c276b0bcc"]
-]
-function goToWebpage(urlIndex: integer) {
-  const link = document.createElement("a");
-  link.href = links[urlIndex][1];
-  link.target = "_blank"
-  link.rel = "noreferrer noopener"
-  link.click();
-  link.remove();
-}
 const donateUrl = "https://github.com/sponsors/patapancakes";
 
 export default class MenuUiHandler extends MessageUiHandler {
@@ -67,8 +52,6 @@ export default class MenuUiHandler extends MessageUiHandler {
 
   protected manageDataConfig: OptionSelectConfig;
   protected communityConfig: OptionSelectConfig;
-  protected accountStatsConfig: OptionSelectConfig;
-  protected legalLinksConfig: OptionSelectConfig;
 
   // Windows for the default message box and the message box for testing dialogue
   private menuMessageBox: Phaser.GameObjects.NineSlice;
@@ -82,8 +65,8 @@ export default class MenuUiHandler extends MessageUiHandler {
     super(scene, mode);
 
     this.excludedMenus = () => [
-      { condition: [Mode.COMMAND, Mode.TITLE].includes(mode ?? Mode.TITLE), options: [MenuOptions.EGG_GACHA, MenuOptions.EGG_LIST] },
-      { condition: bypassLogin, options: [MenuOptions.LOG_OUT] }
+      { condition: [ Mode.COMMAND, Mode.TITLE ].includes(mode ?? Mode.TITLE), options: [ MenuOptions.EGG_GACHA, MenuOptions.EGG_LIST ]},
+      { condition: bypassLogin, options: [ MenuOptions.LOG_OUT ]}
     ];
 
     this.menuOptions = Utils.getEnumKeys(MenuOptions)
@@ -97,7 +80,7 @@ export default class MenuUiHandler extends MessageUiHandler {
     const ui = this.getUi();
     // wiki url directs based on languges available on wiki
     const lang = i18next.resolvedLanguage?.substring(0, 2)!; // TODO: is this bang correct?
-    if (["de", "fr", "ko", "zh"].includes(lang)) {
+    if ([ "de", "fr", "ko", "zh" ].includes(lang)) {
       wikiUrl = `https://wiki.pokerogue.net/${lang}:start`;
     }
 
@@ -125,8 +108,8 @@ export default class MenuUiHandler extends MessageUiHandler {
   render() {
     const ui = this.getUi();
     this.excludedMenus = () => [
-      { condition: this.scene.getCurrentPhase() instanceof SelectModifierPhase, options: [MenuOptions.EGG_GACHA, MenuOptions.EGG_LIST] },
-      { condition: bypassLogin, options: [MenuOptions.LOG_OUT] }
+      { condition: this.scene.getCurrentPhase() instanceof SelectModifierPhase, options: [ MenuOptions.EGG_GACHA, MenuOptions.EGG_LIST ]},
+      { condition: bypassLogin, options: [ MenuOptions.LOG_OUT ]}
     ];
 
     this.menuOptions = Utils.getEnumKeys(MenuOptions)
@@ -358,79 +341,6 @@ export default class MenuUiHandler extends MessageUiHandler {
       maxOptions: 7
     };
 
-    const accountOptions: OptionSelectItem[] = [
-      {
-        label: "Stats",
-        handler: () => {
-          ui.revertMode()
-          ui.setOverlayMode(Mode.GAME_STATS);
-          return true;
-        }
-      },
-      {
-        label: "Achievements",
-        handler: () => {
-          ui.revertMode()
-          ui.setOverlayMode(Mode.ACHIEVEMENTS);
-          return true;
-        }
-      },
-      {
-        label: i18next.t("menuUiHandler:cancel"),
-        handler: () => {
-          this.scene.ui.revertMode();
-          return true;
-        },
-        keepOpen: true
-      }
-    ]
-    
-    this.accountStatsConfig = {
-      xOffset: 98,
-      options: accountOptions
-    };
-
-    const siteOptions: OptionSelectItem[] = [
-      {
-        label: "Consent Preferences",
-        handler: () => {
-          const consentLink = document.querySelector(".termly-display-preferences") as HTMLInputElement;
-          const clickEvent = new MouseEvent("click", {
-            view: window,
-            bubbles: true,
-            cancelable: true
-          });
-          consentLink.dispatchEvent(clickEvent);
-          consentLink.focus();
-          return true;
-        },
-        keepOpen: true
-      }
-    ]
-    for (var i = 0; i < links.length; i++) {
-      siteOptions.push({
-        label: links[i][0],
-        handler: () => {
-          window.open(links[i][1], "_blank")!.focus();
-          return true;
-        },
-        keepOpen: true
-      })
-    }
-    siteOptions.push({
-      label: i18next.t("menuUiHandler:cancel"),
-      handler: () => {
-        this.scene.ui.revertMode();
-        return true;
-      },
-      keepOpen: true
-    })
-
-    this.legalLinksConfig = {
-      xOffset: 98,
-      options: siteOptions
-    };
-
     const communityOptions: OptionSelectItem[] = [
       {
         label: "Wiki",
@@ -562,12 +472,13 @@ export default class MenuUiHandler extends MessageUiHandler {
         ui.setOverlayMode(Mode.SETTINGS);
         success = true;
         break;
-      case MenuOptions.STATS:
-        ui.setOverlayMode(Mode.MENU_OPTION_SELECT, this.accountStatsConfig);
+      case MenuOptions.ACHIEVEMENTS:
+        ui.setOverlayMode(Mode.ACHIEVEMENTS);
         success = true;
         break;
-      case MenuOptions.LINKS:
-        ui.setOverlayMode(Mode.MENU_OPTION_SELECT, this.legalLinksConfig);
+      case MenuOptions.STATS:
+        ui.setOverlayMode(Mode.GAME_STATS);
+        success = true;
         break;
       case MenuOptions.RUN_HISTORY:
         ui.setOverlayMode(Mode.RUN_HISTORY);
@@ -671,23 +582,6 @@ export default class MenuUiHandler extends MessageUiHandler {
           error = true;
         }
         break;
-        case MenuOptions.SAVE_AND_REFRESH:
-          if (this.scene.currentBattle) {
-            success = true;
-            if (this.scene.currentBattle.turn > 1) {
-              ui.showText(i18next.t("menuUiHandler:losingProgressionWarning"), null, () => {
-                ui.setOverlayMode(Mode.CONFIRM, () => this.scene.gameData.saveAll(this.scene, true, true, true, true).then(() => this.scene.reset(true)), () => {
-                  ui.revertMode();
-                  ui.showText("", 0);
-                }, false, -98);
-              });
-            } else {
-              this.scene.gameData.saveAll(this.scene, true, true, true, true).then(() => this.scene.reset(true));
-            }
-          } else {
-            error = true;
-          }
-          break;
       case MenuOptions.LOG_OUT:
         success = true;
         const doLogout = () => {

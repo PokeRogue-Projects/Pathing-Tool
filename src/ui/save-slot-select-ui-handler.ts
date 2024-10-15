@@ -10,19 +10,17 @@ import MessageUiHandler from "./message-ui-handler";
 import { TextStyle, addTextObject } from "./text";
 import { Mode } from "./ui";
 import { addWindow } from "./ui-theme";
-import * as LoggerTools from "../logger"
-import { loggedInUser } from "#app/account.js";
-import { allpanels, biomePanelIDs } from "../loading-scene"
-import { getBiomeName } from "#app/data/biomes.js";
+import { RunDisplayMode } from "#app/ui/run-info-ui-handler";
 
-const sessionSlotCount = 5;
+const SESSION_SLOTS_COUNT = 5;
+const SLOTS_ON_SCREEN = 3;
 
 export enum SaveSlotUiMode {
   LOAD,
   SAVE
 }
 
-export type SaveSlotSelectCallback = (cursor: integer, cursor2?: integer) => void;
+export type SaveSlotSelectCallback = (cursor: integer) => void;
 
 export default class SaveSlotSelectUiHandler extends MessageUiHandler {
 
@@ -37,7 +35,7 @@ export default class SaveSlotSelectUiHandler extends MessageUiHandler {
 
   private scrollCursor: integer = 0;
 
-  private cursorObj: Phaser.GameObjects.NineSlice | null;
+  private cursorObj: Phaser.GameObjects.Container | null;
 
   private sessionSlotsContainerInitialY: number;
 
@@ -88,9 +86,9 @@ export default class SaveSlotSelectUiHandler extends MessageUiHandler {
 
     this.saveSlotSelectContainer.setVisible(true);
     this.populateSessionSlots();
+
     this.setScrollCursor(0);
     this.setCursor(0);
-
     return true;
   }
 
@@ -109,38 +107,18 @@ export default class SaveSlotSelectUiHandler extends MessageUiHandler {
         } else {
           switch (this.uiMode) {
           case SaveSlotUiMode.LOAD:
-            if (this.sessionSlots[cursor].autoSlot) {
-              ui.showText("This will revert slot " + (this.sessionSlots[cursor].slotId + 1) + " to wave " + (this.sessionSlots[cursor].wv) + ".\nIs that okay?", null, () => {
-                ui.setOverlayMode(Mode.CONFIRM, () => {
-                  this.saveSlotSelectCallback = null;
-                  originalCallback && originalCallback(cursor);
-                }, () => {
-                  ui.revertMode();
-                  ui.showText("", 0);
-                }, false, 0, 19, 500);
-              });
-            } else {
-              this.saveSlotSelectCallback = null;
-              originalCallback && originalCallback(cursor);
-            }
+            this.saveSlotSelectCallback = null;
+            originalCallback && originalCallback(cursor);
             break;
           case SaveSlotUiMode.SAVE:
             const saveAndCallback = () => {
               const originalCallback = this.saveSlotSelectCallback;
               this.saveSlotSelectCallback = null;
-              var dataslot = this.sessionSlots[cursor].slotId
-              for (var i = 0; i < LoggerTools.autoCheckpoints.length; i++) {
-                // Delete any autosaves associated with this slot
-                localStorage.removeItem(`sessionData${dataslot ? dataslot : ""}_${loggedInUser ? loggedInUser.username : "Guest"}_auto${i}`)
-              }
               ui.revertMode();
               ui.showText("", 0);
               ui.setMode(Mode.MESSAGE);
-              originalCallback && originalCallback(this.sessionSlots[cursor].slotId, this.sessionSlots[cursor].autoSlot);
+              originalCallback && originalCallback(cursor);
             };
-            if (this.sessionSlots[cursor].autoSlot != undefined) {
-              return false;
-            }
             if (this.sessionSlots[cursor].hasData) {
               ui.showText(i18next.t("saveSlotSelectUiHandler:overwriteData"), null, () => {
                 ui.setOverlayMode(Mode.CONFIRM, () => {
@@ -171,21 +149,28 @@ export default class SaveSlotSelectUiHandler extends MessageUiHandler {
         success = true;
       }
     } else {
+      const cursorPosition = this.cursor + this.scrollCursor;
       switch (button) {
       case Button.UP:
         if (this.cursor) {
-          success = this.setCursor(this.cursor - 1);
+          // Check to prevent cursor from accessing a negative index
+          success = (this.cursor === 0) ? this.setCursor(this.cursor) : this.setCursor(this.cursor - 1, cursorPosition);
         } else if (this.scrollCursor) {
-          success = this.setScrollCursor(this.scrollCursor - 1);
+          success = this.setScrollCursor(this.scrollCursor - 1, cursorPosition);
         }
         break;
       case Button.DOWN:
-        if (this.cursor < 2) {
-          success = this.setCursor(this.cursor + 1);
-        } else if (this.scrollCursor < this.sessionSlots.length - 3) {
-          success = this.setScrollCursor(this.scrollCursor + 1);
+        if (this.cursor < (SLOTS_ON_SCREEN - 1)) {
+          success = this.setCursor(this.cursor + 1, cursorPosition);
+        } else if (this.scrollCursor < SESSION_SLOTS_COUNT - SLOTS_ON_SCREEN) {
+          success = this.setScrollCursor(this.scrollCursor + 1, cursorPosition);
         }
         break;
+      case Button.RIGHT:
+        if (this.sessionSlots[cursorPosition].hasData && this.sessionSlots[cursorPosition].saveData) {
+          this.scene.ui.setOverlayMode(Mode.RUN_INFO, this.sessionSlots[cursorPosition].saveData, RunDisplayMode.SESSION_PREVIEW);
+          success = true;
+        }
       }
     }
 
@@ -199,28 +184,18 @@ export default class SaveSlotSelectUiHandler extends MessageUiHandler {
   }
 
   populateSessionSlots() {
-    var ui = this.getUi();
-    var ypos = 0;
-    for (let s = 0; s < sessionSlotCount; s++) {
-      const sessionSlot = new SessionSlot(this.scene, s, ypos);
-      ypos++
-      sessionSlot.load();
+    for (let s = 0; s < SESSION_SLOTS_COUNT; s++) {
+      const sessionSlot = new SessionSlot(this.scene, s);
       this.scene.add.existing(sessionSlot);
       this.sessionSlotsContainer.add(sessionSlot);
       this.sessionSlots.push(sessionSlot);
-      if (this.uiMode != SaveSlotUiMode.SAVE && this.scene.showAutosaves) {
-        for (var j = 0; j < LoggerTools.autoCheckpoints.length; j++) {
-          var k = "sessionData" + (s ? s : "") + "_Guest_auto" + j
-          if (localStorage.getItem(k) != null) {
-            const sessionSlot = new SessionSlot(this.scene, s, ypos, j);
-            ypos++
-            sessionSlot.load();
-            this.scene.add.existing(sessionSlot);
-            this.sessionSlotsContainer.add(sessionSlot);
-            this.sessionSlots.push(sessionSlot);
-          }
+      sessionSlot.load().then((success) => {
+        // If the cursor was moved to this slot while the session was loading
+        // call setCursor again to shift the slot position and show the arrow for save preview
+        if (success && (this.cursor + this.scrollCursor) === s) {
+          this.setCursor(s);
         }
-      }
+      });
     }
   }
 
@@ -238,25 +213,79 @@ export default class SaveSlotSelectUiHandler extends MessageUiHandler {
     this.saveSlotSelectMessageBoxContainer.setVisible(!!text?.length);
   }
 
-  setCursor(cursor: integer): boolean {
+  /**
+   * Move the cursor to a new position and update the view accordingly
+   * @param cursor the new cursor position, between `0` and `SLOTS_ON_SCREEN - 1`
+   * @param prevSlotIndex index of the previous session occupied by the cursor, between `0` and `SESSION_SLOTS_COUNT - 1` - optional
+   * @returns `true` if the cursor position has changed | `false` if it has not
+   */
+  override setCursor(cursor: integer, prevSlotIndex?: integer): boolean {
     const changed = super.setCursor(cursor);
 
     if (!this.cursorObj) {
-      this.cursorObj = this.scene.add.nineslice(0, 0, "select_cursor_highlight_thick", undefined, 296, 44, 6, 6, 6, 6);
-      this.cursorObj.setOrigin(0, 0);
+      this.cursorObj = this.scene.add.container(0, 0);
+      const cursorBox = this.scene.add.nineslice(0, 0, "select_cursor_highlight_thick", undefined, 296, 44, 6, 6, 6, 6);
+      const rightArrow = this.scene.add.image(0, 0, "cursor");
+      rightArrow.setPosition(160, 0);
+      rightArrow.setName("rightArrow");
+      this.cursorObj.add([ cursorBox, rightArrow ]);
       this.sessionSlotsContainer.add(this.cursorObj);
     }
-    this.cursorObj.setPosition(4, 4 + (cursor + this.scrollCursor) * 56);
+    const cursorPosition = cursor + this.scrollCursor;
+    const cursorIncrement = cursorPosition * 56;
+    if (this.sessionSlots[cursorPosition] && this.cursorObj) {
+      const hasData = this.sessionSlots[cursorPosition].hasData;
+      // If the session slot lacks session data, it does not move from its default, central position.
+      // Only session slots with session data will move leftwards and have a visible arrow.
+      if (!hasData) {
+        this.cursorObj.setPosition(151, 26 + cursorIncrement);
+        this.sessionSlots[cursorPosition].setPosition(0, cursorIncrement);
+      } else {
+        this.cursorObj.setPosition(145, 26 + cursorIncrement);
+        this.sessionSlots[cursorPosition].setPosition(-6, cursorIncrement);
+      }
+      this.setArrowVisibility(hasData);
+    }
+    if (!Utils.isNullOrUndefined(prevSlotIndex)) {
+      this.revertSessionSlot(prevSlotIndex);
+    }
 
     return changed;
   }
 
-  setScrollCursor(scrollCursor: integer): boolean {
+  /**
+   * Helper function that resets the given session slot to its default central position
+   */
+  revertSessionSlot(slotIndex: integer): void {
+    const sessionSlot = this.sessionSlots[slotIndex];
+    if (sessionSlot) {
+      sessionSlot.setPosition(0, slotIndex * 56);
+    }
+  }
+
+  /**
+   * Helper function that checks if the session slot involved holds data or not
+   * @param hasData `true` if session slot contains data | 'false' if not
+   */
+  setArrowVisibility(hasData: boolean): void {
+    if (this.cursorObj) {
+      const rightArrow = this.cursorObj?.getByName("rightArrow") as Phaser.GameObjects.Image;
+      rightArrow.setVisible(hasData);
+    }
+  }
+
+  /**
+   * Move the scrolling cursor to a new position and update the view accordingly
+   * @param scrollCursor the new cursor position, between `0` and `SESSION_SLOTS_COUNT - SLOTS_ON_SCREEN`
+   * @param prevSlotIndex index of the previous slot occupied by the cursor, between `0` and `SESSION_SLOTS_COUNT-1` - optional
+   * @returns `true` if the cursor position has changed | `false` if it has not
+   */
+  setScrollCursor(scrollCursor: integer, prevSlotIndex?: integer): boolean {
     const changed = scrollCursor !== this.scrollCursor;
 
     if (changed) {
       this.scrollCursor = scrollCursor;
-      this.setCursor(this.cursor);
+      this.setCursor(this.cursor, prevSlotIndex);
       this.scene.tweens.add({
         targets: this.sessionSlotsContainer,
         y: this.sessionSlotsContainerInitialY - 56 * scrollCursor,
@@ -271,6 +300,7 @@ export default class SaveSlotSelectUiHandler extends MessageUiHandler {
   clear() {
     super.clear();
     this.saveSlotSelectContainer.setVisible(false);
+    this.setScrollCursor(0);
     this.eraseCursor();
     this.saveSlotSelectCallback = null;
     this.clearSessionSlots();
@@ -291,17 +321,15 @@ export default class SaveSlotSelectUiHandler extends MessageUiHandler {
 
 class SessionSlot extends Phaser.GameObjects.Container {
   public slotId: integer;
-  public autoSlot: integer | undefined;
   public hasData: boolean;
-  public wv: integer;
   private loadingLabel: Phaser.GameObjects.Text;
-  public backer: Phaser.GameObjects.Image
 
-  constructor(scene: BattleScene, slotId: integer, ypos: integer, autoSlot?: integer) {
-    super(scene, 0, ypos * 56);
+  public saveData: SessionSaveData;
+
+  constructor(scene: BattleScene, slotId: integer) {
+    super(scene, 0, slotId * 56);
 
     this.slotId = slotId;
-    this.autoSlot = autoSlot
 
     this.setup();
   }
@@ -310,16 +338,6 @@ class SessionSlot extends Phaser.GameObjects.Container {
     const slotWindow = addWindow(this.scene, 0, 0, 304, 52);
     this.add(slotWindow);
 
-    if (this.scene.doBiomePanels) {
-      this.backer = this.scene.add.image(0, 0, `end_panel`)
-      this.backer.setOrigin(0.5, 0.5)
-      this.backer.setScale(304/909, 52/155)
-      this.backer.setPosition(102*1.5 - 1, 26)
-      this.backer.setSize(304, 52)
-      this.backer.setVisible(false)
-      this.add(this.backer)
-    }
-
     this.loadingLabel = addTextObject(this.scene, 152, 26, i18next.t("saveSlotSelectUiHandler:loading"), TextStyle.WINDOW);
     this.loadingLabel.setOrigin(0.5, 0.5);
     this.add(this.loadingLabel);
@@ -327,27 +345,15 @@ class SessionSlot extends Phaser.GameObjects.Container {
 
   async setupWithData(data: SessionSaveData) {
     this.remove(this.loadingLabel, true);
-    this.wv = data.waveIndex;
-    var lbl = `Slot ${this.slotId+1} (${GameMode.getModeName(data.gameMode) || i18next.t("gameMode:unkown")}) - ${i18next.t("saveSlotSelectUiHandler:wave")} ${data.waveIndex}`
-    if (this.autoSlot != undefined) {
-      lbl = `Slot ${this.slotId+1} (Auto) - ${i18next.t("saveSlotSelectUiHandler:wave")} ${data.waveIndex}`
-    }
-    console.log(data, this.slotId, this.autoSlot, lbl)
-    const gameModeLabel = addTextObject(this.scene, 8, 5, lbl, TextStyle.WINDOW);
+
+    const gameModeLabel = addTextObject(this.scene, 8, 5, `${GameMode.getModeName(data.gameMode) || i18next.t("gameMode:unkown")} - ${i18next.t("saveSlotSelectUiHandler:wave")} ${data.waveIndex}`, TextStyle.WINDOW);
     this.add(gameModeLabel);
 
     const timestampLabel = addTextObject(this.scene, 8, 19, new Date(data.timestamp).toLocaleString(), TextStyle.WINDOW);
     this.add(timestampLabel);
 
-    const playTimeLabel = addTextObject(this.scene, 8, 33, Utils.getPlayTimeString(data.playTime) + "    " + (getBiomeName(data.arena.biome) == "Construction Site" ? "Construction" : getBiomeName(data.arena.biome)), TextStyle.WINDOW);
+    const playTimeLabel = addTextObject(this.scene, 8, 33, Utils.getPlayTimeString(data.playTime), TextStyle.WINDOW);
     this.add(playTimeLabel);
-
-    console.log(biomePanelIDs[data.arena.biome])
-
-    if (this.backer && allpanels.includes(biomePanelIDs[data.arena.biome]) && this.scene.doBiomePanels) {
-      this.backer.setTexture(`${biomePanelIDs[data.arena.biome]}_panel`)
-      this.backer.setVisible(true)
-    }
 
     const pokemonIconsContainer = this.scene.add.container(144, 4);
     data.party.forEach((p: PokemonData, i: integer) => {
@@ -372,22 +378,11 @@ class SessionSlot extends Phaser.GameObjects.Container {
 
     this.add(pokemonIconsContainer);
 
-    const modifiersModule = await import("../modifier/modifier");
-
     const modifierIconsContainer = this.scene.add.container(148, 30);
     modifierIconsContainer.setScale(0.5);
     let visibleModifierIndex = 0;
-    let numberOfModifiers = 0
-    const itemDisplayLimit = 9
     for (const m of data.modifiers) {
-      const modifier = m.toModifier(this.scene, modifiersModule[m.className]);
-      if (modifier instanceof Modifier.PokemonHeldItemModifier) {
-        continue;
-      }
-      numberOfModifiers++;
-    }
-    for (const m of data.modifiers) {
-      const modifier = m.toModifier(this.scene, modifiersModule[m.className]);
+      const modifier = m.toModifier(this.scene, Modifier[m.className]);
       if (modifier instanceof Modifier.PokemonHeldItemModifier) {
         continue;
       }
@@ -396,48 +391,21 @@ class SessionSlot extends Phaser.GameObjects.Container {
         icon.setPosition(24 * visibleModifierIndex, 0);
         modifierIconsContainer.add(icon);
       }
-      if (++visibleModifierIndex === (numberOfModifiers == itemDisplayLimit ? itemDisplayLimit : itemDisplayLimit - 1)) {
+      if (++visibleModifierIndex === 12) {
         break;
       }
     }
-    if (numberOfModifiers > itemDisplayLimit) {
-      var plusText = addTextObject(this.scene, 24 * visibleModifierIndex + 20, 4, `+${numberOfModifiers - visibleModifierIndex}`, TextStyle.PARTY, { fontSize: "80px", color: "#f8f8f8" });
-      plusText.setShadow(0, 0, undefined);
-      plusText.setStroke("#424242", 14);
-      plusText.setOrigin(1, 0);
-      modifierIconsContainer.add(plusText);
-    }
-    var spacing = 20
-    if (data.enemyParty.length == 4) {
-      spacing = 17
-    }
-    if (data.enemyParty.length == 5) {
-      spacing = 12
-    }
-    if (data.enemyParty.length == 6) {
-      spacing = 10
-    }
-    data.enemyParty.forEach((p, i) => {
-      const iconContainer = this.scene.add.container(24 * 9 + 1 + i*spacing, -1);
-      const pokemon = p.toPokemon(this.scene);
-      const icon = this.scene.addPokemonIcon(pokemon, 0, 0, 0, 0);
-      iconContainer.add(icon);
-      pokemon.destroy();
-      modifierIconsContainer.add(iconContainer);
-    })
-    if (true) {
-      const vsLabel = addTextObject(this.scene, 24 * 9 + 20, 15, `vs`, TextStyle.PARTY, { fontSize: "80px", color: "#f8f8f8" });
-      vsLabel.setShadow(0, 0, undefined);
-      vsLabel.setStroke("#424242", 14);
-      vsLabel.setOrigin(1, 0);
-      modifierIconsContainer.add(vsLabel);
-    }
+
     this.add(modifierIconsContainer);
   }
 
   load(): Promise<boolean> {
     return new Promise<boolean>(resolve => {
-      this.scene.gameData.getSession(this.slotId, this.autoSlot).then(async sessionData => {
+      this.scene.gameData.getSession(this.slotId).then(async sessionData => {
+        // Ignore the results if the view was exited
+        if (!this.active) {
+          return;
+        }
         if (!sessionData) {
           this.hasData = false;
           this.loadingLabel.setText(i18next.t("saveSlotSelectUiHandler:empty"));
@@ -445,6 +413,7 @@ class SessionSlot extends Phaser.GameObjects.Container {
           return;
         }
         this.hasData = true;
+        this.saveData = sessionData;
         await this.setupWithData(sessionData);
         resolve(true);
       });

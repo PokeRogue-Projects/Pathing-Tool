@@ -5,7 +5,7 @@ import { Command } from "./command-ui-handler";
 import { Mode } from "./ui";
 import UiHandler from "./ui-handler";
 import { addWindow } from "./ui-theme";
-import {Button} from "#enums/buttons";
+import { Button } from "#enums/buttons";
 import { CommandPhase } from "#app/phases/command-phase";
 
 export default class BallUiHandler extends UiHandler {
@@ -76,7 +76,7 @@ export default class BallUiHandler extends UiHandler {
       success = true;
       if (button === Button.ACTION && this.cursor < pokeballTypeCount) {
         if (this.scene.pokeballCounts[this.cursor]) {
-          if (commandPhase.handleCommand(Command.BALL, false, this.cursor)) {
+          if (commandPhase.handleCommand(Command.BALL, this.cursor)) {
             this.scene.ui.setMode(Mode.COMMAND, commandPhase.getFieldIndex());
             this.scene.ui.setMode(Mode.MESSAGE);
             success = true;

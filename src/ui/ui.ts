@@ -46,8 +46,6 @@ import SettingsAudioUiHandler from "./settings/settings-audio-ui-handler";
 import { PlayerGender } from "#enums/player-gender";
 import BgmBar from "#app/ui/bgm-bar";
 import RenameFormUiHandler from "./rename-form-ui-handler";
-import LogNameFormUiHandler from "./log-name-form-ui-handler";
-import LogSelectUiHandler from "./log-select-ui-handler";
 import AdminUiHandler from "./admin-ui-handler";
 import RunHistoryUiHandler from "./run-history-ui-handler";
 import RunInfoUiHandler from "./run-info-ui-handler";
@@ -94,8 +92,6 @@ export enum Mode {
   UNAVAILABLE,
   OUTDATED,
   CHALLENGE_SELECT,
-  NAME_LOG,
-  LOG_HANDLER,
   RENAME_POKEMON,
   RUN_HISTORY,
   RUN_INFO,
@@ -115,8 +111,6 @@ const transitionModes = [
   Mode.EGG_LIST,
   Mode.EGG_GACHA,
   Mode.CHALLENGE_SELECT,
-  Mode.NAME_LOG,
-  Mode.LOG_HANDLER,
   Mode.RUN_HISTORY,
 ];
 
@@ -208,8 +202,6 @@ export default class UI extends Phaser.GameObjects.Container {
       new UnavailableModalUiHandler(scene),
       new OutdatedModalUiHandler(scene),
       new GameChallengesUiHandler(scene),
-      new LogNameFormUiHandler(scene),
-      new LogSelectUiHandler(scene),
       new RenameFormUiHandler(scene),
       new RunHistoryUiHandler(scene),
       new RunInfoUiHandler(scene),
@@ -281,7 +273,7 @@ export default class UI extends Phaser.GameObjects.Container {
     }
 
     const battleScene = this.scene as BattleScene;
-    if ([Mode.CONFIRM, Mode.COMMAND, Mode.FIGHT, Mode.MESSAGE].includes(this.mode)) {
+    if ([ Mode.CONFIRM, Mode.COMMAND, Mode.FIGHT, Mode.MESSAGE ].includes(this.mode)) {
       battleScene?.processInfoButton(pressed);
       return true;
     }

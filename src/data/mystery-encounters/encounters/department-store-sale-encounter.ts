@@ -14,7 +14,7 @@ import { MysteryEncounterTier } from "#enums/mystery-encounter-tier";
 import { CLASSIC_MODE_MYSTERY_ENCOUNTER_WAVES } from "#app/game-mode";
 
 /** i18n namespace for encounter */
-const namespace = "mysteryEncounter:departmentStoreSale";
+const namespace = "mysteryEncounters/departmentStoreSale";
 
 /**
  * Department Store Sale encounter.
@@ -24,7 +24,7 @@ const namespace = "mysteryEncounter:departmentStoreSale";
 export const DepartmentStoreSaleEncounter: MysteryEncounter =
   MysteryEncounterBuilder.withEncounterType(MysteryEncounterType.DEPARTMENT_STORE_SALE)
     .withEncounterTier(MysteryEncounterTier.COMMON)
-    .withSceneWaveRangeRequirement(-1, 100)
+    .withSceneWaveRangeRequirement(CLASSIC_MODE_MYSTERY_ENCOUNTER_WAVES[0], 100)
     .withIntroSpriteConfigs([
       {
         spriteKey: "department_store_sale_lady",
@@ -43,21 +43,22 @@ export const DepartmentStoreSaleEncounter: MysteryEncounter =
     ])
     .withIntroDialogue([
       {
-        text: `${namespace}.intro`,
+        text: `${namespace}:intro`,
       },
       {
-        text: `${namespace}.intro_dialogue`,
-        speaker: `${namespace}.speaker`,
+        text: `${namespace}:intro_dialogue`,
+        speaker: `${namespace}:speaker`,
       },
     ])
     .withAutoHideIntroVisuals(false)
-    .withTitle(`${namespace}.title`)
-    .withDescription(`${namespace}.description`)
-    .withQuery(`${namespace}.query`)
+    .setLocalizationKey(`${namespace}`)
+    .withTitle(`${namespace}:title`)
+    .withDescription(`${namespace}:description`)
+    .withQuery(`${namespace}:query`)
     .withSimpleOption(
       {
-        buttonLabel: `${namespace}.option.1.label`,
-        buttonTooltip: `${namespace}.option.1.tooltip`,
+        buttonLabel: `${namespace}:option.1.label`,
+        buttonTooltip: `${namespace}:option.1.tooltip`,
       },
       async (scene: BattleScene) => {
         // Choose TMs
@@ -82,8 +83,8 @@ export const DepartmentStoreSaleEncounter: MysteryEncounter =
     )
     .withSimpleOption(
       {
-        buttonLabel: `${namespace}.option.2.label`,
-        buttonTooltip: `${namespace}.option.2.tooltip`,
+        buttonLabel: `${namespace}:option.2.label`,
+        buttonTooltip: `${namespace}:option.2.tooltip`,
       },
       async (scene: BattleScene) => {
         // Choose Vitamins
@@ -106,8 +107,8 @@ export const DepartmentStoreSaleEncounter: MysteryEncounter =
     )
     .withSimpleOption(
       {
-        buttonLabel: `${namespace}.option.3.label`,
-        buttonTooltip: `${namespace}.option.3.tooltip`,
+        buttonLabel: `${namespace}:option.3.label`,
+        buttonTooltip: `${namespace}:option.3.tooltip`,
       },
       async (scene: BattleScene) => {
         // Choose X Items
@@ -130,8 +131,8 @@ export const DepartmentStoreSaleEncounter: MysteryEncounter =
     )
     .withSimpleOption(
       {
-        buttonLabel: `${namespace}.option.4.label`,
-        buttonTooltip: `${namespace}.option.4.tooltip`,
+        buttonLabel: `${namespace}:option.4.label`,
+        buttonTooltip: `${namespace}:option.4.tooltip`,
       },
       async (scene: BattleScene) => {
         // Choose Pokeballs
@@ -158,7 +159,7 @@ export const DepartmentStoreSaleEncounter: MysteryEncounter =
     )
     .withOutroDialogue([
       {
-        text: `${namespace}.outro`,
+        text: `${namespace}:outro`,
       }
     ])
     .build();

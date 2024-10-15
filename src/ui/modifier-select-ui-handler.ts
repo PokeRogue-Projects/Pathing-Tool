@@ -12,7 +12,6 @@ import { allMoves } from "../data/move";
 import * as Utils from "./../utils";
 import Overrides from "#app/overrides";
 import i18next from "i18next";
-import { GameModes } from "#app/game-mode.js";
 import { ShopCursorTarget } from "#app/enums/shop-cursor-target";
 import { IntegerHolder } from "./../utils";
 import Phaser from "phaser";
@@ -40,10 +39,6 @@ export default class ModifierSelectUiHandler extends AwaitableUiHandler {
   private rerollCost: integer;
   private transferButtonWidth: integer;
   private checkButtonWidth: integer;
-
-  public args: any[] = [];
-  public refreshIndex: integer = 0;
-  public optionP: ModifierTypeOption[][];
 
   public options: ModifierOption[];
   public shopOptionsRows: ModifierOption[][];
@@ -143,7 +138,6 @@ export default class ModifierSelectUiHandler extends AwaitableUiHandler {
   }
 
   show(args: any[]): boolean {
-    this.args = args
 
     this.scene.disableMenu = false;
 
@@ -289,7 +283,7 @@ export default class ModifierSelectUiHandler extends AwaitableUiHandler {
       });
 
       this.scene.tweens.add({
-        targets: [this.rerollButtonContainer, this.lockRarityButtonContainer],
+        targets: [ this.rerollButtonContainer, this.lockRarityButtonContainer ],
         alpha: this.rerollCost < 0 ? 0.5 : 1,
         duration: 250
       });
@@ -319,12 +313,6 @@ export default class ModifierSelectUiHandler extends AwaitableUiHandler {
     });
 
     return true;
-  }
-
-  refresh() {
-    this.clear()
-    this.args[1] = this.optionP[this.refreshIndex]
-    this.show(this.args)
   }
 
   processInput(button: Button): boolean {
@@ -588,6 +576,10 @@ export default class ModifierSelectUiHandler extends AwaitableUiHandler {
     this.onActionInput = null;
     this.getUi().clearText();
     this.eraseCursor();
+
+    // Reset cursor positions
+    this.cursor = 0;
+    this.rowCursor = 0;
 
     /* Multiplies the fade time duration by the speed parameter so that it is always constant, and avoids "flashbangs" at game speed x5 */
     this.scene.hideShopOverlay(750 * this.scene.gameSpeed);

@@ -33,8 +33,8 @@ interface GameModeConfig {
 }
 
 // Describes min and max waves for MEs in specific game modes
-export const CLASSIC_MODE_MYSTERY_ENCOUNTER_WAVES: [number, number] = [10, 180];
-export const CHALLENGE_MODE_MYSTERY_ENCOUNTER_WAVES: [number, number] = [10, 180];
+export const CLASSIC_MODE_MYSTERY_ENCOUNTER_WAVES: [number, number] = [ 10, 180 ];
+export const CHALLENGE_MODE_MYSTERY_ENCOUNTER_WAVES: [number, number] = [ 10, 180 ];
 
 export class GameMode implements GameModeConfig {
   public modeId: GameModes;
@@ -169,7 +169,7 @@ export class GameMode implements GameModeConfig {
           } else if (w < waveIndex) {
             arena.scene.executeWithSeedOffset(() => {
               const waveTrainerChance = arena.getTrainerChance();
-              if (!Utils.randSeedInt(waveTrainerChance, undefined, "Random chance of wave being a Trainer Battle")) {
+              if (!Utils.randSeedInt(waveTrainerChance)) {
                 allowTrainerBattle = false;
               }
             }, w);
@@ -179,7 +179,7 @@ export class GameMode implements GameModeConfig {
           }
         }
       }
-      return Boolean(allowTrainerBattle && trainerChance && !Utils.randSeedInt(trainerChance, undefined, "Random chance of wave being a Trainer Battle"));
+      return Boolean(allowTrainerBattle && trainerChance && !Utils.randSeedInt(trainerChance));
     }
     return false;
   }
@@ -197,7 +197,7 @@ export class GameMode implements GameModeConfig {
     if (this.isDaily && this.isWaveFinal(waveIndex)) {
       const allFinalBossSpecies = allSpecies.filter(s => (s.subLegendary || s.legendary || s.mythical)
         && s.baseTotal >= 600 && s.speciesId !== Species.ETERNATUS && s.speciesId !== Species.ARCEUS);
-      return Utils.randSeedItem(allFinalBossSpecies, "Final Boss override");
+      return Utils.randSeedItem(allFinalBossSpecies);
     }
 
     return null;
@@ -330,7 +330,7 @@ export class GameMode implements GameModeConfig {
   getMysteryEncounterLegalWaves(): [number, number] {
     switch (this.modeId) {
     default:
-      return [0, 0];
+      return [ 0, 0 ];
     case GameModes.CLASSIC:
       return CLASSIC_MODE_MYSTERY_ENCOUNTER_WAVES;
     case GameModes.CHALLENGE:

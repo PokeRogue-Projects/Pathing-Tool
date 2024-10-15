@@ -9,13 +9,7 @@ import { BattleSceneEventType, TurnEndEvent } from "../events/battle-scene";
 import { ArenaTagType } from "#enums/arena-tag-type";
 import TimeOfDayWidget from "./time-of-day-widget";
 import * as Utils from "../utils";
-import i18next, {ParseKeys} from "i18next";
-import { getNatureDecrease, getNatureIncrease, getNatureName } from "#app/data/nature.js";
-import * as LoggerTools from "../logger";
-import { Gender } from "#app/data/gender.js";
-import { getBiomeName } from "#app/data/biomes.js";
-import { getLuckString } from "#app/modifier/modifier-type.js";
-import { Species } from "#app/enums/species.js";
+import i18next, { ParseKeys } from "i18next";
 
 /** Enum used to differentiate {@linkcode Arena} effects */
 enum ArenaEffectType {
@@ -95,10 +89,6 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
   /** The {@linkcode Phaser.GameObjects.Text} used to indicate neutral effects */
   private flyoutTextField: Phaser.GameObjects.Text;
 
-  private shinyCharmIcon: Phaser.GameObjects.Sprite;
-  private shinyCharmLuckCount: Phaser.GameObjects.Text;
-  public shinyState: integer = 0;
-
   /** Container for all field effects observed by this object */
   private readonly fieldEffectInfo: ArenaEffectInfo[] = [];
 
@@ -107,8 +97,6 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
   private readonly onTurnEndEvent =   (event: Event) => this.onTurnEnd(event);
 
   private readonly onFieldEffectChangedEvent = (event: Event) => this.onFieldEffectChanged(event);
-
-  public isAuto: boolean = false;
 
   constructor(scene: Phaser.Scene) {
     super(scene, 0, 0);
@@ -195,47 +183,6 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
     // Subscribes to required events available on game start
     this.battleScene.eventTarget.addEventListener(BattleSceneEventType.NEW_ARENA, this.onNewArenaEvent);
     this.battleScene.eventTarget.addEventListener(BattleSceneEventType.TURN_END,  this.onTurnEndEvent);
-
-    this.shinyCharmIcon = this.scene.add.sprite(this.flyoutWidth - 8, 8, "items", "shiny_charm")
-    this.shinyCharmIcon.setScale(0.4)
-    this.shinyCharmIcon.setInteractive(new Phaser.Geom.Rectangle(2, 2, 26, 27), Phaser.Geom.Rectangle.Contains);
-    this.shinyCharmIcon.setVisible(false)
-    this.flyoutContainer.add(this.shinyCharmIcon)
-
-    this.shinyCharmLuckCount = addTextObject(this.scene, this.flyoutWidth - 9, 5, "?", TextStyle.BATTLE_INFO);
-    this.shinyCharmLuckCount.setLineSpacing(-1);
-    this.shinyCharmLuckCount.setFontSize(40);
-    this.shinyCharmLuckCount.setAlign("center");
-    this.shinyCharmLuckCount.setOrigin(0, 0);
-    this.flyoutContainer.add(this.shinyCharmLuckCount)
-  }
-
-  doShinyCharmTooltip() {
-    if (true || (this.scene as BattleScene).currentBattle.waveIndex % 10 == 0) {
-      this.shinyCharmIcon.setVisible(false)
-      this.shinyCharmLuckCount.setVisible(false)
-      return;
-    }
-    this.shinyCharmIcon.setVisible(true)
-    this.shinyCharmLuckCount.setVisible(true)
-    if (true) { // this.shinyCharmIcon.visible
-      this.shinyCharmIcon.removeAllListeners()
-      if (!(this.scene as BattleScene).waveShinyChecked) {
-        this.shinyCharmIcon.setVisible(false)
-        this.shinyCharmLuckCount.setVisible(false)
-        return;
-        //this.shinyCharmIcon.on("pointerover", () => (this.scene as BattleScene).ui.showTooltip(null, `???`));
-      } else if ((this.scene as BattleScene).waveShinyFlag) {
-        this.shinyCharmIcon.clearTint()
-        this.shinyCharmIcon.on("pointerover", () => (this.scene as BattleScene).ui.showTooltip("", `Shinies are OK`));
-        this.shinyCharmLuckCount.setVisible(false)
-      } else {
-        this.shinyCharmIcon.setTintFill(0x000000)
-        this.shinyCharmIcon.on("pointerover", () => (this.scene as BattleScene).ui.showTooltip("", `Shinies change shop with luck ${(this.scene as BattleScene).waveShinyMinToBreak} or higher`));
-        this.shinyCharmLuckCount.text = getLuckString((this.scene as BattleScene).waveShinyMinToBreak)
-      }
-      this.shinyCharmIcon.on("pointerout", () => (this.scene as BattleScene).ui.hideTooltip());
-    }
   }
 
   private onNewArena(event: Event) {
@@ -249,129 +196,18 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
   }
 
 
-
   /** Clears out the current string stored in all arena effect texts */
   private clearText() {
     this.flyoutTextPlayer.text = "";
     this.flyoutTextField.text = "";
     this.flyoutTextEnemy.text = "";
-    this.flyoutTextPlayer.setPosition(6, 13)
-    this.flyoutTextPlayer.setFontSize(48);
-  }
-
-  display1() {
-    this.doShinyCharmTooltip()
-    this.flyoutTextPlayer.text = ""
-    this.flyoutTextField.text = ""
-    this.flyoutTextEnemy.text = ""
-    this.flyoutTextHeaderField.text = ""
-    this.flyoutTextHeaderPlayer.text = ""
-    this.flyoutTextHeaderEnemy.text = ""
-    this.flyoutTextHeader.text = "Game Logs"
-    this.flyoutTextPlayer.setPosition(6, 4)
-    this.flyoutTextPlayer.setFontSize(30);
-    var instructions: string[] = []
-    var drpd = LoggerTools.getDRPD(this.scene as BattleScene);
-    var doWaveInstructions = true;
-    for (var i = 0; i < drpd.waves.length && drpd.waves[i] != undefined && doWaveInstructions; i++) {
-      if (drpd.waves[i].id > (this.scene as BattleScene).currentBattle.waveIndex) {
-        doWaveInstructions = false;
-      } else {
-        instructions.push("")
-        instructions.push("Wave " + drpd.waves[i].id)
-        for (var j = 0; j < drpd.waves[i].actions.length; j++) {
-          instructions.push("- " + drpd.waves[i].actions[j])
-        }
-        if (drpd.waves[i].shop != "")
-          instructions.push("Reward: " + drpd.waves[i].shop)
-      }
-    }
-    for (var i = instructions.length - 10; i < instructions.length; i++) {
-      if (i >= 0) {
-        this.flyoutTextPlayer.text += instructions[i]
-      }
-      this.flyoutTextPlayer.text += "\n"
-    }
-    if (true)
-    for (var i = 0; i < LoggerTools.enemyPlan.length; i++) {
-      if (LoggerTools.enemyPlan[i] != "") {
-        this.flyoutTextEnemy.text += LoggerTools.enemyPlan[i] + "\n"
-      }
-    }
-  }
-
-  display2() {
-    this.doShinyCharmTooltip()
-    this.clearText()
-    var poke = (this.scene as BattleScene).getEnemyField()
-    this.flyoutTextPlayer.text = ""
-    this.flyoutTextField.text = ""
-    this.flyoutTextEnemy.text = ""
-    this.flyoutTextHeaderField.text = "Stats"
-    this.flyoutTextHeaderPlayer.text = ""
-    this.flyoutTextHeaderEnemy.text = ""
-    this.flyoutTextHeader.text = "IVs"
-    this.flyoutTextHeader.text = getBiomeName((this.scene as BattleScene).arena.biomeType) + " - " + (this.scene as BattleScene).currentBattle.waveIndex
-    for (var i = 0; i < poke.length; i++) {
-      if (i == 1 || true) {
-        var formtext = ""
-        if (poke[i].species.forms?.[poke[i].formIndex]?.formName) {
-          formtext = " (" + poke[i].species.forms?.[poke[i].formIndex]?.formName + ")"
-          if (formtext == " (Normal)" || formtext == " (Hero of Many Battles)") {
-            formtext = ""
-          }
-          if (poke[i].species.speciesId == Species.MINIOR) {
-            formtext = " (" + poke[i].species.forms?.[poke[i].formIndex]?.formName.split(" ")[0] + ")"
-          }
-          if (poke[i].species.speciesId == Species.SQUAWKABILLY) {
-            formtext = " (" + poke[i].species.forms?.[poke[i].formIndex]?.formName.substring(0, poke[i].species.forms?.[poke[i].formIndex]?.formName.length - " Plumage".length) + ")"
-          }
-          if (poke[i].species.speciesId == Species.ORICORIO) {
-            formtext = " (" + poke[i].species.forms?.[poke[i].formIndex]?.formName.substring(0, poke[i].species.forms?.[poke[i].formIndex]?.formName.length - " Style".length) + ")"
-          }
-        }
-        const beforeText1 = this.flyoutTextPlayer.text
-        const beforeText2 = this.flyoutTextEnemy.text
-        this.flyoutTextPlayer.text = poke[i].name + formtext + " " + (poke[i].gender == Gender.MALE ? "♂" : (poke[i].gender == Gender.FEMALE ? "♀" : "-")) + " " + poke[i].level
-        this.flyoutTextEnemy.text = poke[i].getAbility().name + (poke[i].isBoss() ? ", " + poke[i].getPassiveAbility().name : "") + " / " + getNatureName(poke[i].nature) + (getNatureIncrease(poke[i].nature) != "" ? " (+" + getNatureIncrease(poke[i].nature) + " -" + getNatureDecrease(poke[i].nature) + ")" : "")
-        if (this.flyoutTextEnemy.width + this.flyoutTextPlayer.width > this.flyoutWidth * 6 - 120) {
-          this.flyoutTextEnemy.text = poke[i].getAbility().name + (poke[i].isBoss() ? ", " + poke[i].getPassiveAbility().name : "") + " / " + getNatureName(poke[i].nature)
-        }
-        //console.log(this.flyoutTextEnemy.width + this.flyoutTextPlayer.width, this.flyoutWidth * 6 - 120)
-        this.flyoutTextPlayer.text = beforeText1 + this.flyoutTextPlayer.text + "\n"
-        this.flyoutTextEnemy.text = beforeText2 + this.flyoutTextEnemy.text + "\n\n\n"
-      }
-      this.flyoutTextPlayer.text += "HP: " + poke[i].ivs[0]
-      this.flyoutTextPlayer.text += ", Atk: " + poke[i].ivs[1]
-      this.flyoutTextPlayer.text += ", Def: " + poke[i].ivs[2]
-      this.flyoutTextPlayer.text += ", Sp.A: " + poke[i].ivs[3]
-      this.flyoutTextPlayer.text += ", Sp.D: " + poke[i].ivs[4]
-      this.flyoutTextPlayer.text += ", Speed: " + poke[i].ivs[5] + "\n\n"
-    }
-    if (poke.length < 2) {
-      //this.flyoutTextEnemy.text += "\n"
-    }
-    if (poke.length < 1) {
-      //this.flyoutTextEnemy.text += "\n\n"
-    }
-    //this.flyoutTextEnemy.text += ((this.scene as BattleScene).waveShinyChecked ? ((this.scene as BattleScene).waveShinyFlag ? "Shiny Luck: OK" : "Shiny Pokemon will change this floor's shop!") : "Shiny Luck: Not checked")
-  }
-
-  public printIVs() {
-    this.display1()
   }
 
   /** Parses through all set Arena Effects and puts them into the proper {@linkcode Phaser.GameObjects.Text} object */
-  public updateFieldText() {
-    this.doShinyCharmTooltip()
+  private updateFieldText() {
     this.clearText();
 
     this.fieldEffectInfo.sort((infoA, infoB) => infoA.duration - infoB.duration);
-
-    this.flyoutTextHeaderPlayer.text = "Player"
-    this.flyoutTextHeaderField.text = "Neutral"
-    this.flyoutTextHeaderEnemy.text = "Enemy"
-    this.flyoutTextHeader.text = "Active Battle Effects"
 
     for (let i = 0; i < this.fieldEffectInfo.length; i++) {
       const fieldEffectInfo = this.fieldEffectInfo[i];
@@ -403,7 +239,6 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
 
       textObject.text += "\n";
     }
-    this.display2()
   }
 
   /**
@@ -480,9 +315,9 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
           ? ArenaEffectType.WEATHER
           : ArenaEffectType.TERRAIN,
         maxDuration: fieldEffectChangedEvent.duration,
-        duration: fieldEffectChangedEvent.duration};
+        duration: fieldEffectChangedEvent.duration };
 
-      foundIndex = this.fieldEffectInfo.findIndex(info => [newInfo.name, oldName].includes(info.name));
+      foundIndex = this.fieldEffectInfo.findIndex(info => [ newInfo.name, oldName ].includes(info.name));
       if (foundIndex === -1) {
         if (newInfo.name !== undefined) {
           this.fieldEffectInfo.push(newInfo); // Adds the info to the array if it doesn't already exist and is defined
@@ -532,7 +367,6 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
    * @param visible Should the flyout be shown?
    */
   public toggleFlyout(visible: boolean): void {
-    this.isAuto = false;
     this.scene.tweens.add({
       targets: this.flyoutParent,
       x: visible ? this.anchorX : this.anchorX - this.translationX,
@@ -541,12 +375,6 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
       alpha: visible ? 1 : 0,
       onComplete: () => this.timeOfDayWidget.parentVisible = visible,
     });
-  }
-
-  public dismiss(): void {
-    if (this.isAuto) {
-      this.toggleFlyout(false)
-    }
   }
 
   public destroy(fromScene?: boolean): void {

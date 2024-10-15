@@ -31,12 +31,12 @@ export default class PokemonSpriteSparkleHandler {
       const parent = (pokemon || s).parentContainer;
       const texture = s.texture;
       const [ width, height ] = [ texture.source[0].width, texture.source[0].height ];
-      const [ pixelX, pixelY ] = [ Utils.randInt(width, undefined, "Pixel X"), Utils.randInt(height, undefined, "Pixel Y") ];
+      const [ pixelX, pixelY ] = [ Utils.randInt(width), Utils.randInt(height) ];
       const ratioX = s.width / width;
       const ratioY = s.height / height;
       const pixel = texture.manager.getPixel(pixelX, pixelY, texture.key, "__BASE");
       if (pixel?.alpha) {
-        const [ xOffset, yOffset ] = [ -s.originX * s.width, -s.originY * s.height];
+        const [ xOffset, yOffset ] = [ -s.originX * s.width, -s.originY * s.height ];
         const sparkle = (s.scene as BattleScene).addFieldSprite(((pokemon?.x || 0) + s.x + pixelX * ratioX + xOffset), ((pokemon?.y || 0) + s.y + pixelY * ratioY + yOffset), "tera_sparkle");
         sparkle.pipelineData["ignoreTimeTint"] = s.pipelineData["ignoreTimeTint"];
         sparkle.setName("sprite-tera-sparkle");

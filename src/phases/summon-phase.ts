@@ -12,7 +12,6 @@ import { PartyMemberPokemonPhase } from "./party-member-pokemon-phase";
 import { PostSummonPhase } from "./post-summon-phase";
 import { GameOverPhase } from "./game-over-phase";
 import { ShinySparklePhase } from "./shiny-sparkle-phase";
-import * as LoggerTools from "../logger";
 import { MysteryEncounterMode } from "#enums/mystery-encounter-mode";
 
 export class SummonPhase extends PartyMemberPokemonPhase {
@@ -31,8 +30,8 @@ export class SummonPhase extends PartyMemberPokemonPhase {
   }
 
   /**
-  * Sends out a Pokemon before the battle begins and shows the appropriate messages
-  */
+    * Sends out a Pokemon before the battle begins and shows the appropriate messages
+    */
   preSummon(): void {
     const partyMember = this.getPokemon();
     // If the Pokemon about to be sent out is fainted, illegal under a challenge, or no longer in the party for some reason, switch to the first non-fainted legal Pokemon
@@ -58,7 +57,7 @@ export class SummonPhase extends PartyMemberPokemonPhase {
       }
 
       // Swaps the fainted Pokemon and the first non-fainted legal Pokemon in the party
-      [party[this.partyMemberIndex], party[legalIndex]] = [party[legalIndex], party[this.partyMemberIndex]];
+      [ party[this.partyMemberIndex], party[legalIndex] ] = [ party[legalIndex], party[this.partyMemberIndex] ];
       console.warn("Swapped %s %O with %s %O", getPokemonNameWithAffix(partyMember), partyMember, getPokemonNameWithAffix(party[0]), party[0]);
     }
 
@@ -241,7 +240,7 @@ export class SummonPhase extends PartyMemberPokemonPhase {
 
     pokemon.resetTurnData();
 
-    if (!this.loaded || [BattleType.TRAINER, BattleType.MYSTERY_ENCOUNTER].includes(this.scene.currentBattle.battleType) || (this.scene.currentBattle.waveIndex % 10) === 1) {
+    if (!this.loaded || [ BattleType.TRAINER, BattleType.MYSTERY_ENCOUNTER ].includes(this.scene.currentBattle.battleType) || (this.scene.currentBattle.waveIndex % 10) === 1) {
       this.scene.triggerPokemonFormChange(pokemon, SpeciesFormChangeActiveTrigger, true);
       this.queuePostSummon();
     }

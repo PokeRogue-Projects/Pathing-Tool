@@ -171,9 +171,9 @@ export function getWeatherLapseMessage(weatherType: WeatherType): string | null 
 export function getWeatherDamageMessage(weatherType: WeatherType, pokemon: Pokemon): string | null {
   switch (weatherType) {
   case WeatherType.SANDSTORM:
-    return i18next.t("weather:sandstormDamageMessage", {pokemonNameWithAffix: getPokemonNameWithAffix(pokemon)});
+    return i18next.t("weather:sandstormDamageMessage", { pokemonNameWithAffix: getPokemonNameWithAffix(pokemon) });
   case WeatherType.HAIL:
-    return i18next.t("weather:hailDamageMessage", {pokemonNameWithAffix: getPokemonNameWithAffix(pokemon)});
+    return i18next.t("weather:hailDamageMessage", { pokemonNameWithAffix: getPokemonNameWithAffix(pokemon) });
   }
 
   return null;
@@ -238,9 +238,9 @@ export function getTerrainClearMessage(terrainType: TerrainType): string | null 
 
 export function getTerrainBlockMessage(pokemon: Pokemon, terrainType: TerrainType): string {
   if (terrainType === TerrainType.MISTY) {
-    return i18next.t("terrain:mistyBlockMessage", {pokemonNameWithAffix: getPokemonNameWithAffix(pokemon)});
+    return i18next.t("terrain:mistyBlockMessage", { pokemonNameWithAffix: getPokemonNameWithAffix(pokemon) });
   }
-  return i18next.t("terrain:defaultBlockMessage", {pokemonNameWithAffix: getPokemonNameWithAffix(pokemon), terrainName: getTerrainName(terrainType)});
+  return i18next.t("terrain:defaultBlockMessage", { pokemonNameWithAffix: getPokemonNameWithAffix(pokemon), terrainName: getTerrainName(terrainType) });
 }
 
 interface WeatherPoolEntry {
@@ -378,7 +378,7 @@ export function getRandomWeatherType(arena: any /* Importing from arena causes a
     let totalWeight = 0;
     weatherPool.forEach(w => totalWeight += w.weight);
 
-    const rand = Utils.randSeedInt(totalWeight, undefined, "Weather selection");
+    const rand = Utils.randSeedInt(totalWeight);
     let w = 0;
     for (const weather of weatherPool) {
       w += weather.weight;

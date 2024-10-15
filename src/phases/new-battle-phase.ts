@@ -1,5 +1,4 @@
 import { BattlePhase } from "./battle-phase";
-import * as LoggerTools from "../logger";
 
 export class NewBattlePhase extends BattlePhase {
   start() {

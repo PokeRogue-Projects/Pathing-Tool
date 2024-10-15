@@ -8,7 +8,6 @@ import * as Utils from "#app/utils";
 import { BattleEndPhase } from "./battle-end-phase";
 import { NewBattlePhase } from "./new-battle-phase";
 import { PokemonPhase } from "./pokemon-phase";
-import * as LoggerTools from "../logger";
 
 export class AttemptRunPhase extends PokemonPhase {
   constructor(scene: BattleScene, fieldIndex: number) {
@@ -29,13 +28,12 @@ export class AttemptRunPhase extends PokemonPhase {
 
     applyAbAttrs(RunSuccessAbAttr, playerPokemon, null, false, escapeChance);
 
-    if (playerPokemon.randSeedInt(100, undefined, "Run away chance") < escapeChance.value) {
+    if (playerPokemon.randSeedInt(100) < escapeChance.value) {
       this.scene.playSound("se/flee");
-      LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, "Fled")
       this.scene.queueMessage(i18next.t("battle:runAwaySuccess"), null, true, 500);
 
       this.scene.tweens.add({
-        targets: [this.scene.arenaEnemy, enemyField].flat(),
+        targets: [ this.scene.arenaEnemy, enemyField ].flat(),
         alpha: 0,
         duration: 250,
         ease: "Sine.easeIn",

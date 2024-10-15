@@ -1,6 +1,5 @@
 import BattleScene from "#app/battle-scene";
 import { EncounterPhase } from "./encounter-phase";
-import * as LoggerTools from "../logger";
 
 export class NextEncounterPhase extends EncounterPhase {
   constructor(scene: BattleScene) {
@@ -24,7 +23,7 @@ export class NextEncounterPhase extends EncounterPhase {
     this.scene.arenaNextEnemy.setVisible(true);
 
     const enemyField = this.scene.getEnemyField();
-    const moveTargets: any[] = [this.scene.arenaEnemy, this.scene.arenaNextEnemy, this.scene.currentBattle.trainer, enemyField, this.scene.lastEnemyTrainer];
+    const moveTargets: any[] = [ this.scene.arenaEnemy, this.scene.arenaNextEnemy, this.scene.currentBattle.trainer, enemyField, this.scene.lastEnemyTrainer ];
     const lastEncounterVisuals = this.scene.lastMysteryEncounter?.introVisuals;
     if (lastEncounterVisuals) {
       moveTargets.push(lastEncounterVisuals);

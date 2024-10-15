@@ -7,7 +7,6 @@ import i18next, { t } from "i18next";
 import * as Utils from "#app/utils";
 import { SelectGenderPhase } from "./select-gender-phase";
 import { UnavailablePhase } from "./unavailable-phase";
-import * as LoggerTools from "../logger";
 
 export class LoginPhase extends Phase {
   private showText: boolean;
@@ -23,7 +22,7 @@ export class LoginPhase extends Phase {
 
     const hasSession = !!Utils.getCookie(Utils.sessionIdKey);
 
-    this.scene.ui.setMode(Mode.LOADING, { buttonActions: [] });
+    this.scene.ui.setMode(Mode.LOADING, { buttonActions: []});
     Utils.executeIf(bypassLogin || hasSession, updateUserInfo).then(response => {
       const success = response ? response[0] : false;
       const statusCode = response ? response[1] : null;

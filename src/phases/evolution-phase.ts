@@ -1,18 +1,17 @@
 import SoundFade from "phaser3-rex-plugins/plugins/soundfade";
-import { Phase } from "../phase";
-import BattleScene from "../battle-scene";
-import { SpeciesFormEvolution } from "../data/pokemon-evolutions";
-import EvolutionSceneHandler from "../ui/evolution-scene-handler";
-import * as Utils from "../utils";
-import { Mode } from "../ui/ui";
-import { cos, sin } from "../field/anims";
-import { PlayerPokemon } from "../field/pokemon";
-import { getTypeRgb } from "../data/type";
+import { Phase } from "#app/phase";
+import BattleScene from "#app/battle-scene";
+import { SpeciesFormEvolution } from "#app/data/balance/pokemon-evolutions";
+import EvolutionSceneHandler from "#app/ui/evolution-scene-handler";
+import * as Utils from "#app/utils";
+import { Mode } from "#app/ui/ui";
+import { cos, sin } from "#app/field/anims";
+import { PlayerPokemon } from "#app/field/pokemon";
+import { getTypeRgb } from "#app/data/type";
 import i18next from "i18next";
-import { getPokemonNameWithAffix } from "../messages";
-import { LearnMovePhase } from "./learn-move-phase";
-import { EndEvolutionPhase } from "./end-evolution-phase";
-import * as LoggerTools from "../logger";
+import { getPokemonNameWithAffix } from "#app/messages";
+import { LearnMovePhase } from "#app/phases/learn-move-phase";
+import { EndEvolutionPhase } from "#app/phases/end-evolution-phase";
 
 export class EvolutionPhase extends Phase {
   protected pokemon: PlayerPokemon;
@@ -203,12 +202,10 @@ export class EvolutionPhase extends Phase {
                                 this.end();
                               };
                               this.scene.ui.setOverlayMode(Mode.CONFIRM, () => {
-                                LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, "Cancel " + preName + "'s evolution and pause evolutions")
                                 this.scene.ui.revertMode();
                                 this.pokemon.pauseEvolutions = true;
                                 this.scene.ui.showText(i18next.t("menu:evolutionsPaused", { pokemonName: preName }), null, end, 3000);
                               }, () => {
-                                LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, "Cancel " + preName + "'s evolution")
                                 this.scene.ui.revertMode();
                                 this.scene.time.delayedCall(3000, end);
                               });
@@ -224,7 +221,6 @@ export class EvolutionPhase extends Phase {
                           evolutionHandler.canCancel = false;
 
                           this.pokemon.evolve(this.evolution, this.pokemon.species).then(() => {
-                            LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, "Evolve " + preName)
                             const levelMoves = this.pokemon.getLevelMoves(this.lastLevel + 1, true);
                             for (const lm of levelMoves) {
                               this.scene.unshiftPhase(new LearnMovePhase(this.scene, this.scene.getParty().indexOf(this.pokemon), lm[1]));
@@ -387,7 +383,7 @@ export class EvolutionPhase extends Phase {
             this.doSprayParticle(i);
           }
         } else if (f < 50) {
-          this.doSprayParticle(Utils.randInt(8, undefined, "%HIDE"));
+          this.doSprayParticle(Utils.randInt(8));
         }
         f++;
       }
@@ -503,8 +499,8 @@ export class EvolutionPhase extends Phase {
 
     let f = 0;
     let yOffset = 0;
-    const speed = 3 - Utils.randInt(8, undefined, "%HIDE");
-    const amp = 48 + Utils.randInt(64, undefined, "%HIDE");
+    const speed = 3 - Utils.randInt(8);
+    const amp = 48 + Utils.randInt(64);
 
     const particleTimer = this.scene.tweens.addCounter({
       repeat: -1,
