@@ -73,7 +73,7 @@ export const biomePanelIDs: string[] = [
   "",
   "",
   "end"
-]
+];
 export const allpanels: string[] = [
   "abyss",
   "badlands",
@@ -110,7 +110,7 @@ export const allpanels: string[] = [
   "town",
   "volcano",
   "wasteland"
-]
+];
 
 export class LoadingScene extends SceneBase {
   public static readonly KEY = "loading";
@@ -145,13 +145,13 @@ export class LoadingScene extends SceneBase {
       }
     }
     //this.loadImage(`abyss_panel`, "ui/windows");
-//    this.loadImage(`badlands_panel`, "ui/windows");
+    //    this.loadImage(`badlands_panel`, "ui/windows");
     //this.loadImage(`beach_panel`, "ui/windows");
     //this.loadImage(`cave_panel`, "ui/windows");
     //this.loadImage(`construction_site_panel`, "ui/windows");
     //this.loadImage(`desert_panel`, "ui/windows");
     //this.loadImage(`dojo_panel`, "ui/windows");
-//    this.loadImage(`end_panel`, "ui/windows");
+    //    this.loadImage(`end_panel`, "ui/windows");
     //this.loadImage(`factory_panel`, "ui/windows");
     //this.loadImage(`fairy_cave_panel`, "ui/windows");
     //this.loadImage(`forest_panel`, "ui/windows");
@@ -167,19 +167,19 @@ export class LoadingScene extends SceneBase {
     //this.loadImage(`mountain_panel`, "ui/windows");
     //this.loadImage(`plains_panel`, "ui/windows");
     //this.loadImage(`power_plant_panel`, "ui/windows");
-     //this.loadImage(`ruins_panel`, "ui/windows");
-//    this.loadImage(`sea_panel`, "ui/windows");
+    //this.loadImage(`ruins_panel`, "ui/windows");
+    //    this.loadImage(`sea_panel`, "ui/windows");
     //this.loadImage(`seabed_panel`, "ui/windows");
     //this.loadImage(`slum_panel`, "ui/windows");
     //this.loadImage(`snowy_forest_panel`, "ui/windows");
-//    this.loadImage(`space_panel`, "ui/windows");
+    //    this.loadImage(`space_panel`, "ui/windows");
     //this.loadImage(`swamp_panel`, "ui/windows");
     //this.loadImage(`tall_grass_panel`, "ui/windows");
     //this.loadImage(`temple_panel`, "ui/windows");
     //this.loadImage(`town_panel`, "ui/windows");
-//    this.loadImage(`volcano_panel`, "ui/windows");
-//    this.loadImage(`wasteland_panel`, "ui/windows");
-    for (var i = 0; i < allpanels.length; i++) {
+    //    this.loadImage(`volcano_panel`, "ui/windows");
+    //    this.loadImage(`wasteland_panel`, "ui/windows");
+    for (let i = 0; i < allpanels.length; i++) {
       this.loadImageNoLegacy(`${allpanels[i]}_panel`, "ui/windows");
     }
     this.loadAtlas("namebox", "ui");

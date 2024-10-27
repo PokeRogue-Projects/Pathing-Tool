@@ -55,13 +55,13 @@ export class VictoryPhase extends PokemonPhase {
         if (this.scene.currentBattle.waveIndex % 10) {
           this.scene.pushPhase(new SelectModifierPhase(this.scene, undefined, undefined, this.getFixedBattleCustomModifiers()));
         } else if (this.scene.gameMode.isDaily) {
-          LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, "")
+          LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, "");
           this.scene.pushPhase(new ModifierRewardPhase(this.scene, modifierTypes.EXP_CHARM));
           if (this.scene.currentBattle.waveIndex > 10 && !this.scene.gameMode.isWaveFinal(this.scene.currentBattle.waveIndex)) {
             this.scene.pushPhase(new ModifierRewardPhase(this.scene, modifierTypes.GOLDEN_POKEBALL));
           }
         } else {
-          LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, "")
+          LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, "");
           const superExpWave = !this.scene.gameMode.isEndless ? (this.scene.offsetGym ? 0 : 20) : 10;
           if (this.scene.gameMode.isEndless && this.scene.currentBattle.waveIndex === 10) {
             this.scene.pushPhase(new ModifierRewardPhase(this.scene, modifierTypes.EXP_SHARE));
@@ -79,7 +79,7 @@ export class VictoryPhase extends PokemonPhase {
         }
         this.scene.pushPhase(new NewBattlePhase(this.scene));
       } else {
-        LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, "")
+        LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, "");
         this.scene.currentBattle.battleType = BattleType.CLEAR;
         this.scene.score += this.scene.gameMode.getClearScoreBonus();
         this.scene.updateScoreText();

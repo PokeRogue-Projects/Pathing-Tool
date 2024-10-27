@@ -73,8 +73,8 @@ export interface IMysteryEncounter {
   expMultiplier: number;
 }
 
-export const CLASSIC_MODE_MYSTERY_ENCOUNTER_WAVES: [number, number] = [10, 180];
-export const CHALLENGE_MODE_MYSTERY_ENCOUNTER_WAVES: [number, number] = [10, 180];
+export const CLASSIC_MODE_MYSTERY_ENCOUNTER_WAVES: [number, number] = [ 10, 180 ];
+export const CHALLENGE_MODE_MYSTERY_ENCOUNTER_WAVES: [number, number] = [ 10, 180 ];
 
 /**
  * MysteryEncounter class that defines the logic for a single encounter

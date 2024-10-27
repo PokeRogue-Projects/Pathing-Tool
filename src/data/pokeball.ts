@@ -50,24 +50,24 @@ export function getPokeballName(type: PokeballType): string {
 export function getPokeballShortName(type: PokeballType): string {
   let ret: string;
   switch (type) {
-  case PokeballType.POKEBALL:
-    ret = "Poké";
-    break;
-  case PokeballType.GREAT_BALL:
-    ret = "Great";
-    break;
-  case PokeballType.ULTRA_BALL:
-    ret = "Ultra";
-    break;
-  case PokeballType.ROGUE_BALL:
-    ret = "Rogue";
-    break;
-  case PokeballType.MASTER_BALL:
-    ret = "Master";
-    break;
-  case PokeballType.LUXURY_BALL:
-    ret = "Luxury";
-    break;
+    case PokeballType.POKEBALL:
+      ret = "Poké";
+      break;
+    case PokeballType.GREAT_BALL:
+      ret = "Great";
+      break;
+    case PokeballType.ULTRA_BALL:
+      ret = "Ultra";
+      break;
+    case PokeballType.ROGUE_BALL:
+      ret = "Rogue";
+      break;
+    case PokeballType.MASTER_BALL:
+      ret = "Master";
+      break;
+    case PokeballType.LUXURY_BALL:
+      ret = "Luxury";
+      break;
   }
   return ret;
 }

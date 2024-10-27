@@ -290,11 +290,11 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
   /**
    * Gets multiplier text for a pokemon's move against a specific opponent.
    * Returns undefined if it's a status move.
-   * 
+   *
    * If Type Hints is enabled, shows the move's type effectiveness.
-   * 
+   *
    * If Damage Calculation is enabled, shows the move's expected damage range.
-   * 
+   *
    * If Type Hints and Damage Calculation are both off, the type effectiveness multiplier is hidden.
    */
   private getEffectivenessText(pokemon: Pokemon, opponent: Pokemon, pokemonMove: PokemonMove): string | undefined {

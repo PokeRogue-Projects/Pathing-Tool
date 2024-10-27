@@ -2294,7 +2294,7 @@ export class StealHeldItemChanceAttr extends MoveEffectAttr {
       }
       //*/
 
-      console.log("realInRange direct call @ StealHeldItemChanceAttr: " + rand)
+      console.log("realInRange direct call @ StealHeldItemChanceAttr: " + rand);
       if (rand >= this.chance) {
         return resolve(false);
       }

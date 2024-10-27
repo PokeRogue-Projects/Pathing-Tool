@@ -4738,7 +4738,7 @@ function applyAbAttrsInternalNoApply<TAttr extends AbAttr>(attrType: Constructor
   return new Promise(resolve => {
     if (!pokemon.canApplyAbility(passive)) {
       if (!passive) {
-        args[0].value = 0
+        args[0].value = 0;
         return resolve();
         //return applyAbAttrsInternal(attrType, pokemon, applyFunc, args, isAsync, showAbilityInstant, quiet, true).then(() => resolve());
       } else {
@@ -4752,8 +4752,8 @@ function applyAbAttrsInternalNoApply<TAttr extends AbAttr>(attrType: Constructor
     const clearSpliceQueueAndResolve = () => {
       pokemon.scene?.clearPhaseQueueSplice();
       if (!passive) {
-        args[0].value = 0
-        return resolve()
+        args[0].value = 0;
+        return resolve();
         //return applyAbAttrsInternal(attrType, pokemon, applyFunc, args, isAsync, showAbilityInstant, quiet, true).then(() => resolve());
       } else {
         return resolve();

@@ -32,9 +32,9 @@ export class SelectModifierPhase extends BattlePhase {
     this.modifierTiers = modifierTiers;
     this.customModifierSettings = customModifierSettings;
     this.modifierPredictions = modifierPredictions;
-    this.predictionCost = predictionCost
-    this.costTiers = []
-    this.isCopy = isCopy
+    this.predictionCost = predictionCost;
+    this.costTiers = [];
+    this.isCopy = isCopy;
   }
 
   generateSelection(rerollOverride: integer, modifierOverride?: integer) {
@@ -48,29 +48,29 @@ export class SelectModifierPhase extends BattlePhase {
       this.scene.applyModifiers(ExtraModifierModifier, true, modifierCount);
     }
     if (modifierOverride) {
-      modifierCount.value = modifierOverride
+      modifierCount.value = modifierOverride;
     }
     const typeOptions: ModifierTypeOption[] = this.getModifierTypeOptions(modifierCount.value);
     typeOptions.forEach((option, idx) => {
-      option.netprice = this.predictionCost
+      option.netprice = this.predictionCost;
       if (option.type.name == "Nugget") {
-        option.netprice -= this.scene.getWaveMoneyAmount(1)
+        option.netprice -= this.scene.getWaveMoneyAmount(1);
       }
       if (option.type.name == "Big Nugget") {
-        option.netprice -= this.scene.getWaveMoneyAmount(2.5)
+        option.netprice -= this.scene.getWaveMoneyAmount(2.5);
       }
       if (option.type.name == "Relic Gold") {
-        option.netprice -= this.scene.getWaveMoneyAmount(10)
+        option.netprice -= this.scene.getWaveMoneyAmount(10);
       }
       //console.log(option.type.name)
-    })
+    });
     //console.log("====================")
     if (this.modifierPredictions == undefined) {
-      this.modifierPredictions = []
+      this.modifierPredictions = [];
     }
-    this.modifierPredictions[rerollOverride] = typeOptions
-    this.costTiers.push(this.predictionCost)
-    this.predictionCost += this.getRerollCost(false)
+    this.modifierPredictions[rerollOverride] = typeOptions;
+    this.costTiers.push(this.predictionCost);
+    this.predictionCost += this.getRerollCost(false);
     //Phaser.Math.RND.state(STATE) // Restore RNG state like nothing happened
   }
 
@@ -82,11 +82,11 @@ export class SelectModifierPhase extends BattlePhase {
     } else if (this.rerollCount) {
       this.scene.reroll = false;
     } else {
-      console.log("\n\nReroll Prediction\n\n\n")
-      this.predictionCost = 0
-      this.costTiers = []
-      for (var idx = 0; idx < 10 && this.predictionCost < this.scene.money; idx++) {
-        this.generateSelection(idx, undefined)
+      console.log("\n\nReroll Prediction\n\n\n");
+      this.predictionCost = 0;
+      this.costTiers = [];
+      for (let idx = 0; idx < 10 && this.predictionCost < this.scene.money; idx++) {
+        this.generateSelection(idx, undefined);
       }
       this.updateSeed();
     }
@@ -120,7 +120,7 @@ export class SelectModifierPhase extends BattlePhase {
       if (rowCursor < 0 || cursor < 0) {
         this.scene.ui.showText(i18next.t("battle:skipItemQuestion"), null, () => {
           this.scene.ui.setOverlayMode(Mode.CONFIRM, () => {
-            LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, "Skip taking items")
+            LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, "Skip taking items");
             this.scene.ui.revertMode();
             this.scene.ui.setMode(Mode.MESSAGE);
             super.end();
@@ -253,7 +253,7 @@ export class SelectModifierPhase extends BattlePhase {
         if (modifierType instanceof FusePokemonModifierType) {
           this.scene.ui.setModeWithoutClear(Mode.PARTY, PartyUiMode.SPLICE, -1, (fromSlotIndex: integer, spliceSlotIndex: integer) => {
             if (spliceSlotIndex !== undefined && fromSlotIndex < 6 && spliceSlotIndex < 6 && fromSlotIndex !== spliceSlotIndex) {
-              LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, modifierType.name + " → " + this.scene.getParty()[fromSlotIndex].name + " + " + this.scene.getParty()[spliceSlotIndex].name)
+              LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, modifierType.name + " → " + this.scene.getParty()[fromSlotIndex].name + " + " + this.scene.getParty()[spliceSlotIndex].name);
               this.scene.ui.setMode(Mode.MODIFIER_SELECT, this.isPlayer()).then(() => {
                 const modifier = modifierType.newModifier(party[fromSlotIndex], party[spliceSlotIndex])!; //TODO: is the bang correct?
                 applyModifier(modifier, true);
@@ -284,13 +284,13 @@ export class SelectModifierPhase extends BattlePhase {
                     : modifierType.newModifier(party[slotIndex], option as integer)
                   : modifierType.newModifier(party[slotIndex], option - PartyOption.MOVE_1);
                 if (isPpRestoreModifier) {
-                  LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, modifierType.name + " → " + this.scene.getParty()[slotIndex].name + " → " + this.scene.getParty()[slotIndex].moveset[option - PartyOption.MOVE_1]!.getName())
+                  LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, modifierType.name + " → " + this.scene.getParty()[slotIndex].name + " → " + this.scene.getParty()[slotIndex].moveset[option - PartyOption.MOVE_1]!.getName());
                 } else if (isRememberMoveModifier) {
-                  LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, modifierType.name + " → " + this.scene.getParty()[slotIndex].name)
+                  LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, modifierType.name + " → " + this.scene.getParty()[slotIndex].name);
                 } else if (isTmModifier) {
-                  LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, modifierType.name + " → " + this.scene.getParty()[slotIndex].name)
+                  LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, modifierType.name + " → " + this.scene.getParty()[slotIndex].name);
                 } else {
-                  LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, modifierType.name + " → " + this.scene.getParty()[slotIndex].name)
+                  LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, modifierType.name + " → " + this.scene.getParty()[slotIndex].name);
                 }
                 applyModifier(modifier!, true); // TODO: is the bang correct?
               });
@@ -300,7 +300,7 @@ export class SelectModifierPhase extends BattlePhase {
           }, pokemonModifierType.selectFilter, modifierType instanceof PokemonMoveModifierType ? (modifierType as PokemonMoveModifierType).moveSelectFilter : undefined, tmMoveId, isPpRestoreModifier);
         }
       } else {
-        LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, modifierType!.name)
+        LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, modifierType!.name);
         applyModifier(modifierType!.newModifier()!); // TODO: is the bang correct?
       }
 

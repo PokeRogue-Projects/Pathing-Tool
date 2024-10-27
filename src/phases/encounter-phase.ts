@@ -98,9 +98,9 @@ export class EncounterPhase extends BattlePhase {
     let totalBst = 0;
 
     while (LoggerTools.rarities.length > 0) {
-      LoggerTools.rarities.pop()
+      LoggerTools.rarities.pop();
     }
-    LoggerTools.rarityslot[0] = 0
+    LoggerTools.rarityslot[0] = 0;
     //console.log(this.scene.gameMode.getDailyOverride())
     battle.enemyLevels?.every((level, e) => {
       if (battle.isBattleMysteryEncounter()) {
@@ -111,7 +111,7 @@ export class EncounterPhase extends BattlePhase {
         if (battle.battleType === BattleType.TRAINER) {
           battle.enemyParty[e] = battle.trainer?.genPartyMember(e)!; // TODO:: is the bang correct here?
         } else {
-          LoggerTools.rarityslot[0] = e
+          LoggerTools.rarityslot[0] = e;
           let enemySpecies = this.scene.randomSpecies(battle.waveIndex, level, true);
           // If player has golden bug net, rolls 10% chance to replace non-boss wave wild species from the golden bug net bug pool
           if (this.scene.findModifier(m => m instanceof BoostBugSpawnModifier)
@@ -163,7 +163,7 @@ export class EncounterPhase extends BattlePhase {
       console.log(`Pokemon: ${getPokemonNameWithAffix(enemyPokemon)}`, `Species ID: ${enemyPokemon.species.speciesId}`, `Stats: ${enemyPokemon.stats}`, `Ability: ${enemyPokemon.getAbility().name}`, `Passive Ability: ${enemyPokemon.getPassiveAbility().name}`);
       return true;
     });
-    console.log(LoggerTools.rarities)
+    console.log(LoggerTools.rarities);
 
     if (this.scene.getParty().filter(p => p.isShiny()).length === 6) {
       this.scene.validateAchv(achvs.SHINY_PARTY);
@@ -326,21 +326,21 @@ export class EncounterPhase extends BattlePhase {
 
     //LoggerTools.resetWave(this.scene, this.scene.currentBattle.waveIndex)
     if (this.scene.lazyReloads) {
-      LoggerTools.flagResetIfExists(this.scene)
+      LoggerTools.flagResetIfExists(this.scene);
     }
-    LoggerTools.logTeam(this.scene, this.scene.currentBattle.waveIndex)
+    LoggerTools.logTeam(this.scene, this.scene.currentBattle.waveIndex);
     if (this.scene.getEnemyParty()[0].hasTrainer()) {
-      LoggerTools.logTrainer(this.scene, this.scene.currentBattle.waveIndex)
+      LoggerTools.logTrainer(this.scene, this.scene.currentBattle.waveIndex);
     }
     if (this.scene.currentBattle.waveIndex == 1) {
-      LoggerTools.logPlayerTeam(this.scene)
+      LoggerTools.logPlayerTeam(this.scene);
       if (this.scene.gameMode.modeId == GameModes.DAILY && this.scene.disableDailyShinies) {
         this.scene.getParty().forEach(p => {
           p.species.luckOverride = 0; // Disable shiny luck for party members
-        })
+        });
       }
     }
-    LoggerTools.resetWaveActions(this.scene, undefined, true)
+    LoggerTools.resetWaveActions(this.scene, undefined, true);
 
     //this.scene.doShinyCheck()
 
@@ -533,11 +533,11 @@ export class EncounterPhase extends BattlePhase {
     handleTutorial(this.scene, Tutorial.Access_Menu).then(() => {
       // Auto-show the flyout
       if (this.scene.currentBattle.battleType !== BattleType.TRAINER) {
-        this.scene.arenaFlyout.display2()
-        this.scene.arenaFlyout.toggleFlyout(true)
-        this.scene.arenaFlyout.isAuto = true
+        this.scene.arenaFlyout.display2();
+        this.scene.arenaFlyout.toggleFlyout(true);
+        this.scene.arenaFlyout.isAuto = true;
       }
-      super.end()
+      super.end();
     });
   }
 

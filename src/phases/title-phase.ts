@@ -43,10 +43,10 @@ export class TitlePhase extends Phase {
     this.scene.ui.showText(message, null, () => {
       const config: OptionSelectConfig = {
         options: new Array(5).fill(null).map((_, i) => i).filter(slotFilter).map(i => {
-          var data = LoggerTools.parseSlotData(i)
+          const data = LoggerTools.parseSlotData(i);
           return {
             //label: `${i18next.t("menuUiHandler:slot", {slotNumber: i+1})}`,
-            label: (data ? `${i18next.t("menuUiHandler:slot", {slotNumber: i+1})}${data.description.substring(1)}` : `${i18next.t("menuUiHandler:slot", {slotNumber: i+1})}`),
+            label: (data ? `${i18next.t("menuUiHandler:slot", { slotNumber: i + 1 })}${data.description.substring(1)}` : `${i18next.t("menuUiHandler:slot", { slotNumber: i + 1 })}`),
             handler: () => {
               callback(i);
               this.scene.ui.revertMode();
@@ -57,8 +57,8 @@ export class TitlePhase extends Phase {
         }).concat([{
           label: i18next.t("menuUiHandler:cancel"),
           handler: () => {
-            p.callEnd()
-            return true
+            p.callEnd();
+            return true;
           }
         }]),
         //xOffset: 98
@@ -90,78 +90,105 @@ export class TitlePhase extends Phase {
   }
 
   getLastSave(log?: boolean, dailyOnly?: boolean, noDaily?: boolean): SessionSaveData | undefined {
-    var saves: Array<Array<any>> = [];
-    for (var i = 0; i < 5; i++) {
-      var s = LoggerTools.parseSlotData(i);
+    const saves: Array<Array<any>> = [];
+    for (let i = 0; i < 5; i++) {
+      const s = LoggerTools.parseSlotData(i);
       if (s != undefined) {
         if ((!noDaily && !dailyOnly) || (s.gameMode == GameModes.DAILY && dailyOnly) || (s.gameMode != GameModes.DAILY && noDaily)) {
-          saves.push([i, s, s.timestamp]);
+          saves.push([ i, s, s.timestamp ]);
         }
       }
     }
-    saves.sort((a, b): integer => {return b[2] - a[2]})
-    if (log) console.log(saves)
-    if (saves == undefined) return undefined;
-    if (saves[0] == undefined) return undefined;
-    return saves[0][1]
+    saves.sort((a, b): integer => {
+      return b[2] - a[2];
+    });
+    if (log) {
+      console.log(saves);
+    }
+    if (saves == undefined) {
+      return undefined;
+    }
+    if (saves[0] == undefined) {
+      return undefined;
+    }
+    return saves[0][1];
   }
   getLastSavesOfEach(log?: boolean): SessionSaveData[] | undefined {
-    var saves: Array<Array<SessionSaveData | number>> = [];
+    const saves: Array<Array<SessionSaveData | number>> = [];
     for (var i = 0; i < 5; i++) {
-      var s = LoggerTools.parseSlotData(i);
+      const s = LoggerTools.parseSlotData(i);
       if (s != undefined) {
-        saves.push([i, s, s.timestamp]);
+        saves.push([ i, s, s.timestamp ]);
       }
     }
-    saves.sort((a, b): integer => {return (b[2] as number) - (a[2] as number)})
-    if (log) console.log(saves)
-    if (saves == undefined) return undefined;
-    if (saves[0] == undefined) return undefined;
-    var validSaves: Array<Array<SessionSaveData | number>> = []
-    var hasNormal = false;
-    var hasDaily = false;
+    saves.sort((a, b): integer => {
+      return (b[2] as number) - (a[2] as number);
+    });
+    if (log) {
+      console.log(saves);
+    }
+    if (saves == undefined) {
+      return undefined;
+    }
+    if (saves[0] == undefined) {
+      return undefined;
+    }
+    const validSaves: Array<Array<SessionSaveData | number>> = [];
+    let hasNormal = false;
+    let hasDaily = false;
     for (var i = 0; i < saves.length; i++) {
       if ((saves[i][1] as SessionSaveData).gameMode == GameModes.DAILY && !hasDaily) {
         hasDaily = true;
-        validSaves.push(saves[i])
+        validSaves.push(saves[i]);
       }
       if ((saves[i][1] as SessionSaveData).gameMode != GameModes.DAILY && !hasNormal) {
         hasNormal = true;
-        validSaves.push(saves[i])
+        validSaves.push(saves[i]);
       }
     }
-    console.log(saves, validSaves)
-    if (validSaves.length == 0)
+    console.log(saves, validSaves);
+    if (validSaves.length == 0) {
       return undefined;
+    }
     return validSaves.map(f => f[1] as SessionSaveData);
   }
   getSaves(log?: boolean, dailyOnly?: boolean): SessionSaveData[] | undefined {
-    var saves: Array<Array<any>> = [];
-    for (var i = 0; i < 5; i++) {
-      var s = LoggerTools.parseSlotData(i);
+    const saves: Array<Array<any>> = [];
+    for (let i = 0; i < 5; i++) {
+      const s = LoggerTools.parseSlotData(i);
       if (s != undefined) {
         if (!dailyOnly || s.gameMode == GameModes.DAILY) {
-          saves.push([i, s, s.timestamp]);
+          saves.push([ i, s, s.timestamp ]);
         }
       }
     }
-    saves.sort((a, b): integer => {return b[2] - a[2]})
-    if (log) console.log(saves)
-    if (saves == undefined) return undefined;
+    saves.sort((a, b): integer => {
+      return b[2] - a[2];
+    });
+    if (log) {
+      console.log(saves);
+    }
+    if (saves == undefined) {
+      return undefined;
+    }
     return saves.map(f => f[1]);
   }
   getSavesUnsorted(log?: boolean, dailyOnly?: boolean): SessionSaveData[] | undefined {
-    var saves: Array<Array<any>> = [];
-    for (var i = 0; i < 5; i++) {
-      var s = LoggerTools.parseSlotData(i);
+    const saves: Array<Array<any>> = [];
+    for (let i = 0; i < 5; i++) {
+      const s = LoggerTools.parseSlotData(i);
       if (s != undefined) {
         if (!dailyOnly || s.gameMode == GameModes.DAILY) {
-          saves.push([i, s, s.timestamp]);
+          saves.push([ i, s, s.timestamp ]);
         }
       }
     }
-    if (log) console.log(saves)
-    if (saves == undefined) return undefined;
+    if (log) {
+      console.log(saves);
+    }
+    if (saves == undefined) {
+      return undefined;
+    }
     return saves.map(f => f[1]);
   }
 
@@ -179,10 +206,10 @@ export class TitlePhase extends Phase {
 
   logMenu(): boolean {
     const options: OptionSelectItem[] = [];
-    LoggerTools.getLogs()
-    for (var i = 0; i < LoggerTools.logs.length; i++) {
+    LoggerTools.getLogs();
+    for (let i = 0; i < LoggerTools.logs.length; i++) {
       if (localStorage.getItem(LoggerTools.logs[i][1]) != null) {
-        options.push(LoggerTools.generateOption(i, this.getSaves()) as OptionSelectItem)
+        options.push(LoggerTools.generateOption(i, this.getSaves()) as OptionSelectItem);
       } else {
         //options.push(LoggerTools.generateAddOption(i, this.scene, this))
       }
@@ -190,9 +217,9 @@ export class TitlePhase extends Phase {
     options.push({
       label: "Delete all",
       handler: () => {
-        for (var i = 0; i < LoggerTools.logs.length; i++) {
+        for (let i = 0; i < LoggerTools.logs.length; i++) {
           if (localStorage.getItem(LoggerTools.logs[i][1]) != null) {
-            localStorage.removeItem(LoggerTools.logs[i][1])
+            localStorage.removeItem(LoggerTools.logs[i][1]);
           }
         }
         this.scene.clearPhaseQueue();
@@ -214,11 +241,11 @@ export class TitlePhase extends Phase {
   }
   logRenameMenu(): boolean {
     const options: OptionSelectItem[] = [];
-    LoggerTools.getLogs()
-    this.setBiomeByType(Biome.FACTORY)
-    for (var i = 0; i < LoggerTools.logs.length; i++) {
+    LoggerTools.getLogs();
+    this.setBiomeByType(Biome.FACTORY);
+    for (let i = 0; i < LoggerTools.logs.length; i++) {
       if (localStorage.getItem(LoggerTools.logs[i][1]) != null) {
-        options.push(LoggerTools.generateEditOption(this.scene, i, this.getSaves(), this) as OptionSelectItem)
+        options.push(LoggerTools.generateEditOption(this.scene, i, this.getSaves(), this) as OptionSelectItem);
       } else {
         //options.push(LoggerTools.generateAddOption(i, this.scene, this))
       }
@@ -226,9 +253,9 @@ export class TitlePhase extends Phase {
     options.push({
       label: "Delete all",
       handler: () => {
-        for (var i = 0; i < LoggerTools.logs.length; i++) {
+        for (let i = 0; i < LoggerTools.logs.length; i++) {
           if (localStorage.getItem(LoggerTools.logs[i][1]) != null) {
-            localStorage.removeItem(LoggerTools.logs[i][1])
+            localStorage.removeItem(LoggerTools.logs[i][1]);
           }
         }
         this.scene.clearPhaseQueue();
@@ -251,24 +278,25 @@ export class TitlePhase extends Phase {
 
   showOptions(): void {
     const options: OptionSelectItem[] = [];
-    if (false)
-    if (loggedInUser && loggedInUser!.lastSessionSlot > -1) {
-      options.push({
-        label: i18next.t("continue", { ns: "menu" }),
-        handler: () => {
-          this.loadSaveSlot(this.lastSessionData ? -1 : loggedInUser!.lastSessionSlot);
-          return true;
-        }
-      });
+    if (false) {
+      if (loggedInUser && loggedInUser!.lastSessionSlot > -1) {
+        options.push({
+          label: i18next.t("continue", { ns: "menu" }),
+          handler: () => {
+            this.loadSaveSlot(this.lastSessionData ? -1 : loggedInUser!.lastSessionSlot);
+            return true;
+          }
+        });
+      }
     }
     // Replaces 'Continue' with all Daily Run saves, sorted by when they last saved
     // If there are no daily runs, it instead shows the most recently saved run
     // If this fails too, there are no saves, and the option does not appear
-    var lastsaves = this.getSaves(false, true); // Gets all Daily Runs sorted by last play time
-    var lastsave = this.getLastSave(); // Gets the last save you played
-    var ls1 = this.getLastSave(false, true)
-    var ls2 = this.getLastSavesOfEach()
-    this.scene.quickloadDisplayMode = "Both"
+    const lastsaves = this.getSaves(false, true); // Gets all Daily Runs sorted by last play time
+    const lastsave = this.getLastSave(); // Gets the last save you played
+    const ls1 = this.getLastSave(false, true);
+    const ls2 = this.getLastSavesOfEach();
+    this.scene.quickloadDisplayMode = "Both";
     switch (true) {
       case (this.scene.quickloadDisplayMode == "Daily" && ls1 != undefined):
         options.push({
@@ -277,7 +305,7 @@ export class TitlePhase extends Phase {
             this.loadSaveSlot(ls1!.slot);
             return true;
           }
-        })
+        });
         break;
       case this.scene.quickloadDisplayMode == "Dailies" && lastsaves != undefined && ls1 != undefined:
         lastsaves.forEach(lastsave1 => {
@@ -287,8 +315,8 @@ export class TitlePhase extends Phase {
               this.loadSaveSlot(lastsave1.slot);
               return true;
             }
-          })
-        })
+          });
+        });
         break;
       case lastsave != undefined && (this.scene.quickloadDisplayMode == "Latest" || ((this.scene.quickloadDisplayMode == "Daily" || this.scene.quickloadDisplayMode == "Dailies") && ls1 == undefined)):
         options.push({
@@ -297,7 +325,7 @@ export class TitlePhase extends Phase {
             this.loadSaveSlot(lastsave!.slot);
             return true;
           }
-        })
+        });
         break;
       case this.scene.quickloadDisplayMode == "Both" && ls2 != undefined:
         ls2.forEach(lastsave2 => {
@@ -307,13 +335,13 @@ export class TitlePhase extends Phase {
               this.loadSaveSlot(lastsave2.slot);
               return true;
             }
-          })
-        })
+          });
+        });
         break;
       default: // If set to "Off" or all above conditions failed
         if (loggedInUser && loggedInUser.lastSessionSlot > -1) {
           options.push({
-            label: i18next.t("continue", { ns: "menu"}),
+            label: i18next.t("continue", { ns: "menu" }),
             handler: () => {
               this.loadSaveSlot(this.lastSessionData ? -1 : loggedInUser!.lastSessionSlot);
               return true;
@@ -372,7 +400,7 @@ export class TitlePhase extends Phase {
               return true;
             },
             keepOpen: true
-          })
+          });
           options.push({
             label: i18next.t("menu:cancel"),
             handler: () => {
@@ -400,7 +428,7 @@ export class TitlePhase extends Phase {
               return true;
             },
             keepOpen: true
-          })
+          });
           options.push({
             label: i18next.t("menu:cancel"),
             handler: () => {
@@ -423,7 +451,7 @@ export class TitlePhase extends Phase {
             if (k === undefined) {
               return this.showOptions();
             }
-            console.log(k)
+            console.log(k);
             this.showOptions();
           }, () => {
             this.showOptions();
@@ -433,13 +461,13 @@ export class TitlePhase extends Phase {
     }, {
       label: "Manage Logs (Old Menu)",
       handler: () => {
-        return this.logRenameMenu()
+        return this.logRenameMenu();
       }
-    })
+    });
     options.push({
       label: i18next.t("menu:loadGame"),
       handler: () => {
-        this.scene.biomeChangeMode = false
+        this.scene.biomeChangeMode = false;
         this.scene.ui.setOverlayMode(Mode.SAVE_SLOT, SaveSlotUiMode.LOAD,
           (slotId: integer, autoSlot: integer) => {
             if (slotId === -1) {
@@ -449,7 +477,7 @@ export class TitlePhase extends Phase {
           });
         return true;
       }
-    })
+    });
     if (false) {
       options.push({
         label: i18next.t("menu:dailyRun"),
@@ -458,7 +486,7 @@ export class TitlePhase extends Phase {
           return true;
         },
         keepOpen: true
-      })
+      });
     }
     options.push({
       label: i18next.t("menu:settings"),
@@ -569,19 +597,19 @@ export class TitlePhase extends Phase {
   }
   setupDaily(): void {
     // TODO
-    var saves = this.getSaves()
-    var saveNames = new Array(5).fill("")
-    for (var i = 0; i < saves!.length; i++) {
-      saveNames[saves![i][0]] = saves![i][1].description
+    const saves = this.getSaves();
+    const saveNames = new Array(5).fill("");
+    for (let i = 0; i < saves!.length; i++) {
+      saveNames[saves![i][0]] = saves![i][1].description;
     }
-    const ui = this.scene.ui
+    const ui = this.scene.ui;
     const confirmSlot = (message: string, slotFilter: (i: integer) => boolean, callback: (i: integer) => void) => {
       ui.revertMode();
       ui.showText(message, null, () => {
         const config: OptionSelectConfig = {
           options: new Array(5).fill(null).map((_, i) => i).filter(slotFilter).map(i => {
             return {
-              label: (i+1) + " " + saveNames[i],
+              label: (i + 1) + " " + saveNames[i],
               handler: () => {
                 callback(i);
                 ui.revertMode();
@@ -607,7 +635,7 @@ export class TitlePhase extends Phase {
       this.scene.pushPhase(new TitlePhase(this.scene));
       super.end();
       return true;
-    })
+    });
     return;
     confirmSlot("Select a slot to replace.", () => true, slotId => this.scene.gameData.importData(GameDataType.SESSION, slotId));
   }

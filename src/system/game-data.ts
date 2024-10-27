@@ -42,7 +42,7 @@ import { PlayerGender } from "#enums/player-gender";
 import { Species } from "#enums/species";
 import { applyChallenges, ChallengeType } from "#app/data/challenge";
 import { WeatherType } from "#enums/weather-type";
-import * as LoggerTools from "../logger"
+import * as LoggerTools from "../logger";
 import { TerrainType } from "#app/data/terrain";
 import { ReloadSessionPhase } from "#app/phases/reload-session-phase";
 import { RUN_HISTORY_LIMIT } from "#app/ui/run-history-ui-handler";
@@ -998,9 +998,9 @@ export class GameData {
           return;
         }
       };
-      var autokey = ""
+      let autokey = "";
       if (autoSlot != undefined) {
-        autokey = "_auto" + autoSlot
+        autokey = "_auto" + autoSlot;
       }
       if (!bypassLogin && !localStorage.getItem(`sessionData${slotId ? slotId : ""}_${loggedInUser ? loggedInUser.username : "Guest"}${autokey}`)) {
         Utils.apiFetch(`savedata/session/get?slot=${slotId}&clientSessionId=${clientSessionId}`, true)
@@ -1337,9 +1337,9 @@ export class GameData {
   }
 
   saveGameToAuto(scene: BattleScene) {
-    var autoSlot = LoggerTools.autoCheckpoints.indexOf(scene.currentBattle.waveIndex)
-    var dat = this.getSessionSaveData(scene)
-    console.log(`Stored autosave as sessionData${scene.sessionSlotId ? scene.sessionSlotId : ""}_${loggedInUser ? loggedInUser.username : "Guest"}_auto${autoSlot}`)
+    const autoSlot = LoggerTools.autoCheckpoints.indexOf(scene.currentBattle.waveIndex);
+    const dat = this.getSessionSaveData(scene);
+    console.log(`Stored autosave as sessionData${scene.sessionSlotId ? scene.sessionSlotId : ""}_${loggedInUser ? loggedInUser.username : "Guest"}_auto${autoSlot}`);
     localStorage.setItem(`sessionData${scene.sessionSlotId ? scene.sessionSlotId : ""}_${loggedInUser ? loggedInUser.username : "Guest"}_auto${autoSlot}`, encrypt(JSON.stringify(dat), bypassLogin));
   }
 

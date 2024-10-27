@@ -19,7 +19,7 @@ import * as LoggerTools from "../logger";
 import { MysteryEncounterMode } from "#enums/mystery-encounter-mode";
 import { getEnumKeys, isNullOrUndefined } from "#app/utils";
 
-export const targIDs: string[] = ["Self", "Self", "Ally", "L", "R", "Self", "Ally"]
+export const targIDs: string[] = [ "Self", "Self", "Ally", "L", "R", "Self", "Ally" ];
 
 export class CommandPhase extends FieldPhase {
   protected fieldIndex: integer;
@@ -53,7 +53,7 @@ export class CommandPhase extends FieldPhase {
           if (this.fieldIndex == 0) {
             LoggerTools.Actions[1] = ""; // Remove the second Pokémon's action, as we will not be attacking this turn
           } else {
-            LoggerTools.Actions[0] = "" // Remove the first Pokémon's action, as their turn is now being skipped]
+            LoggerTools.Actions[0] = ""; // Remove the first Pokémon's action, as their turn is now being skipped]
           }
           this.scene.currentBattle.turnCommands[this.fieldIndex] = { command: allyCommand?.command, skip: true };
         }
@@ -106,42 +106,42 @@ export class CommandPhase extends FieldPhase {
     let success: boolean;
 
     if (!logCommand) {
-      LoggerTools.Actions[this.fieldIndex] = "%SKIP"
+      LoggerTools.Actions[this.fieldIndex] = "%SKIP";
     }
 
     switch (command) {
-    case Command.FIGHT:
-      let useStruggle = false;
-      if (cursor === -1 ||
+      case Command.FIGHT:
+        let useStruggle = false;
+        if (cursor === -1 ||
           playerPokemon.trySelectMove(cursor, args[0] as boolean) ||
           (useStruggle = cursor > -1 && !playerPokemon.getMoveset().filter(m => m?.isUsable(playerPokemon)).length)) {
-        const moveId = !useStruggle ? cursor > -1 ? playerPokemon.getMoveset()[cursor]!.moveId : Moves.NONE : Moves.STRUGGLE; // TODO: is the bang correct?
-        const turnCommand: TurnCommand = { command: Command.FIGHT, cursor: cursor, move: { move: moveId, targets: [], ignorePP: args[0] }, args: args };
-        const moveTargets: MoveTargetSet = args.length < 3 ? getMoveTargets(playerPokemon, moveId) : args[2];
-        let moveData: PokemonMove | undefined;
-        if (!moveId) {
-          turnCommand.targets = [this.fieldIndex];
-        }
-        console.log(moveTargets, getPokemonNameWithAffix(playerPokemon));
-        if (moveTargets.targets.length > 1 && moveTargets.multiple) {
-          this.scene.unshiftPhase(new SelectTargetPhase(this.scene, this.fieldIndex));
+          const moveId = !useStruggle ? cursor > -1 ? playerPokemon.getMoveset()[cursor]!.moveId : Moves.NONE : Moves.STRUGGLE; // TODO: is the bang correct?
+          const turnCommand: TurnCommand = { command: Command.FIGHT, cursor: cursor, move: { move: moveId, targets: [], ignorePP: args[0] }, args: args };
+          const moveTargets: MoveTargetSet = args.length < 3 ? getMoveTargets(playerPokemon, moveId) : args[2];
+          let moveData: PokemonMove | undefined;
+          if (!moveId) {
+            turnCommand.targets = [ this.fieldIndex ];
+          }
+          console.log(moveTargets, getPokemonNameWithAffix(playerPokemon));
+          if (moveTargets.targets.length > 1 && moveTargets.multiple) {
+            this.scene.unshiftPhase(new SelectTargetPhase(this.scene, this.fieldIndex));
           // No need to log the move, as SelectTargetPhase will call another CommandPhase with the correct data
-        }
-        if (moveTargets.targets.length <= 1 || moveTargets.multiple) {
+          }
+          if (moveTargets.targets.length <= 1 || moveTargets.multiple) {
           turnCommand.move!.targets = moveTargets.targets; //TODO: is the bang correct here?
-          LoggerTools.Actions[this.fieldIndex] = (moveData ? moveData!.getName() : "[???]") + " " + this.formatTargets([], this.fieldIndex)
-        } else if (playerPokemon.getTag(BattlerTagType.CHARGING) && playerPokemon.getMoveQueue().length >= 1) {
+          LoggerTools.Actions[this.fieldIndex] = (moveData ? moveData!.getName() : "[???]") + " " + this.formatTargets([], this.fieldIndex);
+          } else if (playerPokemon.getTag(BattlerTagType.CHARGING) && playerPokemon.getMoveQueue().length >= 1) {
           // A charging move will be executed this turn, so we do not need to log ourselves using it (we already selected the move last turn)
           turnCommand.move!.targets = playerPokemon.getMoveQueue()[0].targets; //TODO: is the bang correct here?
-        } else {
-          this.scene.unshiftPhase(new SelectTargetPhase(this.scene, this.fieldIndex));
+          } else {
+            this.scene.unshiftPhase(new SelectTargetPhase(this.scene, this.fieldIndex));
           // No need to log the move, as SelectTargetPhase will call another CommandPhase with the correct data
-        }
-        this.scene.currentBattle.turnCommands[this.fieldIndex] = turnCommand;
-        success = true;
-      } else if (cursor < playerPokemon.getMoveset().length) {
-        const move = playerPokemon.getMoveset()[cursor]!; //TODO: is this bang correct?
-        this.scene.ui.setMode(Mode.MESSAGE);
+          }
+          this.scene.currentBattle.turnCommands[this.fieldIndex] = turnCommand;
+          success = true;
+        } else if (cursor < playerPokemon.getMoveset().length) {
+          const move = playerPokemon.getMoveset()[cursor]!; //TODO: is this bang correct?
+          this.scene.ui.setMode(Mode.MESSAGE);
 
           // Decides between a Disabled, Not Implemented, or No PP translation message
           const errorMessage =
@@ -200,7 +200,7 @@ export class CommandPhase extends FieldPhase {
             } else {
               this.scene.currentBattle.turnCommands[this.fieldIndex] = { command: Command.BALL, cursor: cursor };
               this.scene.currentBattle.turnCommands[this.fieldIndex]!.targets = targets;
-              LoggerTools.Actions[this.fieldIndex] = "Ball"
+              LoggerTools.Actions[this.fieldIndex] = "Ball";
               if (this.fieldIndex) {
                 this.scene.currentBattle.turnCommands[this.fieldIndex - 1]!.skip = true;
               }
@@ -236,7 +236,7 @@ export class CommandPhase extends FieldPhase {
               ? { command: Command.POKEMON, cursor: cursor, args: args }
               : { command: Command.RUN };
             success = true;
-            LoggerTools.Actions[this.fieldIndex] = isSwitch ? `Switch to ${this.scene.getParty()[cursor].name}` : "Run from battle"
+            LoggerTools.Actions[this.fieldIndex] = isSwitch ? `Switch to ${this.scene.getParty()[cursor].name}` : "Run from battle";
             if (!isSwitch && this.fieldIndex) {
             currentBattle.turnCommands[this.fieldIndex - 1]!.skip = true;
             }
@@ -292,9 +292,9 @@ export class CommandPhase extends FieldPhase {
 
   cancel() {
     if (this.fieldIndex) {
-      LoggerTools.Actions[0] = ""
+      LoggerTools.Actions[0] = "";
       this.scene.unshiftPhase(new CommandPhase(this.scene, 0));
-      LoggerTools.Actions[1] = ""
+      LoggerTools.Actions[1] = "";
       this.scene.unshiftPhase(new CommandPhase(this.scene, 1));
       this.end();
     }
@@ -327,9 +327,9 @@ export class CommandPhase extends FieldPhase {
    * @param fieldIndex The `BattlerIndex` of the user
    */
   formatTargets(indices: BattlerIndex[], fieldIndex: BattlerIndex) {
-    var output: string[] = [];
-    for (var i = 0; i < indices.length; i++) {
-      var selection = "";
+    const output: string[] = [];
+    for (let i = 0; i < indices.length; i++) {
+      let selection = "";
       if (fieldIndex < 2) {
         // Player
         selection = targIDs[indices[i] + 1];
@@ -339,10 +339,10 @@ export class CommandPhase extends FieldPhase {
       }
       // If this Pokémon is on the right side of the field, flip the terms 'self' and 'ally'
       if (selection == "Self" && fieldIndex % 2 == 1) {
-        selection = "Ally"
+        selection = "Ally";
       }
       if (selection == "Ally" && fieldIndex % 2 == 1) {
-        selection = "Self"
+        selection = "Self";
       }
     }
     return "→ " + output.join(", ");

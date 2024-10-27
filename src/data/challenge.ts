@@ -448,21 +448,21 @@ export class SingleGenerationChallenge extends Challenge {
   applyFixedBattle(waveIndex: Number, battleConfig: FixedBattleConfig): boolean {
     let trainerTypes: TrainerType[] = [];
     switch (waveIndex) {
-    case 182:
-      trainerTypes = [ TrainerType.LORELEI, TrainerType.WILL, TrainerType.SIDNEY, TrainerType.AARON, TrainerType.SHAUNTAL, TrainerType.MALVA, Utils.randSeedItem([ TrainerType.HALA, TrainerType.MOLAYNE ]), TrainerType.MARNIE_ELITE, TrainerType.RIKA ];
-      break;
-    case 184:
-      trainerTypes = [ TrainerType.BRUNO, TrainerType.KOGA, TrainerType.PHOEBE, TrainerType.BERTHA, TrainerType.MARSHAL, TrainerType.SIEBOLD, TrainerType.OLIVIA, TrainerType.NESSA_ELITE, TrainerType.POPPY ];
-      break;
-    case 186:
-      trainerTypes = [ TrainerType.AGATHA, TrainerType.BRUNO, TrainerType.GLACIA, TrainerType.FLINT, TrainerType.GRIMSLEY, TrainerType.WIKSTROM, TrainerType.ACEROLA, Utils.randSeedItem([TrainerType.BEA_ELITE, TrainerType.ALLISTER_ELITE]), TrainerType.LARRY_ELITE ];
-      break;
-    case 188:
-      trainerTypes = [ TrainerType.LANCE, TrainerType.KAREN, TrainerType.DRAKE, TrainerType.LUCIAN, TrainerType.CAITLIN, TrainerType.DRASNA, TrainerType.KAHILI, TrainerType.RAIHAN_ELITE, TrainerType.HASSEL ];
-      break;
-    case 190:
-      trainerTypes = [ TrainerType.BLUE, Utils.randSeedItem([ TrainerType.RED, TrainerType.LANCE_CHAMPION ], "Champion (Gen 2)"), Utils.randSeedItem([ TrainerType.STEVEN, TrainerType.WALLACE ], "Champion (Gen 3)"), TrainerType.CYNTHIA, Utils.randSeedItem([ TrainerType.ALDER, TrainerType.IRIS ], "Champion (Gen 5)"), TrainerType.DIANTHA, TrainerType.HAU, TrainerType.LEON, Utils.randSeedItem([ TrainerType.GEETA, TrainerType.NEMONA ], "Champion (Gen 9+)") ];
-      break;
+      case 182:
+        trainerTypes = [ TrainerType.LORELEI, TrainerType.WILL, TrainerType.SIDNEY, TrainerType.AARON, TrainerType.SHAUNTAL, TrainerType.MALVA, Utils.randSeedItem([ TrainerType.HALA, TrainerType.MOLAYNE ]), TrainerType.MARNIE_ELITE, TrainerType.RIKA ];
+        break;
+      case 184:
+        trainerTypes = [ TrainerType.BRUNO, TrainerType.KOGA, TrainerType.PHOEBE, TrainerType.BERTHA, TrainerType.MARSHAL, TrainerType.SIEBOLD, TrainerType.OLIVIA, TrainerType.NESSA_ELITE, TrainerType.POPPY ];
+        break;
+      case 186:
+        trainerTypes = [ TrainerType.AGATHA, TrainerType.BRUNO, TrainerType.GLACIA, TrainerType.FLINT, TrainerType.GRIMSLEY, TrainerType.WIKSTROM, TrainerType.ACEROLA, Utils.randSeedItem([ TrainerType.BEA_ELITE, TrainerType.ALLISTER_ELITE ]), TrainerType.LARRY_ELITE ];
+        break;
+      case 188:
+        trainerTypes = [ TrainerType.LANCE, TrainerType.KAREN, TrainerType.DRAKE, TrainerType.LUCIAN, TrainerType.CAITLIN, TrainerType.DRASNA, TrainerType.KAHILI, TrainerType.RAIHAN_ELITE, TrainerType.HASSEL ];
+        break;
+      case 190:
+        trainerTypes = [ TrainerType.BLUE, Utils.randSeedItem([ TrainerType.RED, TrainerType.LANCE_CHAMPION ], "Champion (Gen 2)"), Utils.randSeedItem([ TrainerType.STEVEN, TrainerType.WALLACE ], "Champion (Gen 3)"), TrainerType.CYNTHIA, Utils.randSeedItem([ TrainerType.ALDER, TrainerType.IRIS ], "Champion (Gen 5)"), TrainerType.DIANTHA, TrainerType.HAU, TrainerType.LEON, Utils.randSeedItem([ TrainerType.GEETA, TrainerType.NEMONA ], "Champion (Gen 9+)") ];
+        break;
     }
     if (trainerTypes.length === 0) {
       return false;

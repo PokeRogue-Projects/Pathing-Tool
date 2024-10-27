@@ -1102,15 +1102,15 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
   }
 
   getLuck(): integer {
-    var L1 = this.luck
-    var L2 = 0
+    let L1 = this.luck;
+    let L2 = 0;
     if (this.species.luckOverride) {
-      L1 = this.species.luckOverride
+      L1 = this.species.luckOverride;
     }
     if (this.isFusion()) {
-      L2 = this.fusionLuck
+      L2 = this.fusionLuck;
       if (this.fusionSpecies?.luckOverride) {
-        L2 = this.fusionSpecies.luckOverride
+        L2 = this.fusionSpecies.luckOverride;
       }
     }
     return L1 + L2;
@@ -2537,7 +2537,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
     applyMoveAttrs(CritOnlyAttr, source, this, move, critOnly);
     applyAbAttrs(ConditionalCritAbAttr, source, null, false, critOnly, this, move);
     if (critOnly.value || critAlways) {
-      return true
+      return true;
     }
     return false;
   }
@@ -3264,7 +3264,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
     }
 
     const key = `cry/${this.species.getCryKey(this.formIndex)}`;
-    //eslint-disable-next-line @typescript-eslint/no-unused-vars
+
     let i = 0;
     let rate = 0.85;
     const cry = this.scene.playSound(key, { rate: rate }) as AnySound;
@@ -4679,24 +4679,24 @@ export class EnemyPokemon extends Pokemon {
    * @returns this Pokemon's next move in the format {move, moveTargets}
    */
   getNextMove(): QueuedMove {
-    console.log("Starting getNextMove() for " + this.name)
+    console.log("Starting getNextMove() for " + this.name);
     // If this Pokemon has a move already queued, return it.
     const queuedMove = this.getMoveQueue().length
       ? this.getMoveset().find(m => m?.moveId === this.getMoveQueue()[0].move)
       : null;
     if (queuedMove) {
       if (queuedMove.isUsable(this, this.getMoveQueue()[0].ignorePP)) {
-        this.flyout.setText()
+        this.flyout.setText();
         for (var i = 0; i < this.moveset.length; i++) {
           if (this.moveset[i]?.moveId == queuedMove.moveId) {
-            this.flyout.setText(i)
+            this.flyout.setText(i);
           }
         }
-        console.log("  Move was already selected")
+        console.log("  Move was already selected");
         return { move: queuedMove.moveId, targets: this.getMoveQueue()[0].targets, ignorePP: this.getMoveQueue()[0].ignorePP };
       } else {
         this.getMoveQueue().shift();
-        console.log("  Selected move cannot be used")
+        console.log("  Selected move cannot be used");
         return this.getNextMove();
       }
     }
@@ -4707,8 +4707,8 @@ export class EnemyPokemon extends Pokemon {
     if (movePool.length) {
       // If there's only 1 move in the move pool, use it.
       if (movePool.length === 1) {
-        this.flyout.setText(this.getMoveset().indexOf(movePool[0]))
-        console.log("  Only one move to select")
+        this.flyout.setText(this.getMoveset().indexOf(movePool[0]));
+        console.log("  Only one move to select");
         return { move: movePool[0]!.moveId, targets: this.getNextTargets(movePool[0]!.moveId) }; // TODO: are the bangs correct?
       }
       // If a move is forced because of Encore, use it.
@@ -4716,19 +4716,19 @@ export class EnemyPokemon extends Pokemon {
       if (encoreTag) {
         const encoreMove = movePool.find(m => m?.moveId === encoreTag.moveId);
         if (encoreMove) {
-          this.flyout.setText(this.getMoveset().indexOf(encoreMove))
-          console.log("  Locked into Encore")
+          this.flyout.setText(this.getMoveset().indexOf(encoreMove));
+          console.log("  Locked into Encore");
           return { move: encoreMove.moveId, targets: this.getNextTargets(encoreMove.moveId) };
         }
       }
       switch (this.aiType) {
-      case AiType.RANDOM: // No enemy should spawn with this AI type in-game
-        var i = this.scene.randBattleSeedInt(movePool.length, undefined, "Move selection roll (RANDOM)")
-        const moveId = movePool[i]!.moveId;
-        this.flyout.setText(i)
-        return { move: moveId, targets: this.getNextTargets(moveId) };
-      case AiType.SMART_RANDOM:
-      case AiType.SMART:
+        case AiType.RANDOM: // No enemy should spawn with this AI type in-game
+          var i = this.scene.randBattleSeedInt(movePool.length, undefined, "Move selection roll (RANDOM)");
+          const moveId = movePool[i]!.moveId;
+          this.flyout.setText(i);
+          return { move: moveId, targets: this.getNextTargets(moveId) };
+        case AiType.SMART_RANDOM:
+        case AiType.SMART:
         /**
          * Search this Pokemon's move pool for moves that will KO an opposing target.
          * If there are any moves that can KO an opponent (i.e. a player Pokemon),
@@ -4855,8 +4855,8 @@ export class EnemyPokemon extends Pokemon {
           return { move: sortedMovePool[r]!.moveId, targets: moveTargets[sortedMovePool[r]!.moveId] };
       }
     }
-    this.flyout.setText()
-    console.log("  Selected Struggle")
+    this.flyout.setText();
+    console.log("  Selected Struggle");
     return { move: Moves.STRUGGLE, targets: this.getNextTargets(Moves.STRUGGLE) };
   }
 
@@ -4866,12 +4866,12 @@ export class EnemyPokemon extends Pokemon {
    * @returns The indexes of the Pokemon the given move would target
    */
   getNextTargets(moveId: Moves): BattlerIndex[] {
-    console.log("Starting getNextTargets() for " + this.name + " with move " + Utils.getEnumKeys(Moves)[moveId])
+    console.log("Starting getNextTargets() for " + this.name + " with move " + Utils.getEnumKeys(Moves)[moveId]);
     const moveTargets = getMoveTargets(this, moveId);
     const targets = this.scene.getField(true).filter(p => moveTargets.targets.indexOf(p.getBattlerIndex()) > -1);
     // If the move is multi-target, return all targets' indexes
     if (moveTargets.multiple) {
-      console.log("  Multi-target move")
+      console.log("  Multi-target move");
       return targets.map(p => p.getBattlerIndex());
     }
 
@@ -4895,10 +4895,10 @@ export class EnemyPokemon extends Pokemon {
       // Set target to BattlerIndex.ATTACKER when using a counter move
       // This is the same as when the player does so
       if (move.hasAttr(CounterDamageAttr)) {
-        console.log("  Counter move")
-        return [BattlerIndex.ATTACKER];
+        console.log("  Counter move");
+        return [ BattlerIndex.ATTACKER ];
       }
-      console.log("  No targets available")
+      console.log("  No targets available");
       return [];
     }
 
@@ -4943,8 +4943,8 @@ export class EnemyPokemon extends Pokemon {
       targetIndex = i;
       return false;
     });
-    console.log("Target selection thresholds", thresholds)
-    console.log("  Randomly selected position " + sortedBenefitScores[targetIndex][0] + " as target")
+    console.log("Target selection thresholds", thresholds);
+    console.log("  Randomly selected position " + sortedBenefitScores[targetIndex][0] + " as target");
 
     return [ sortedBenefitScores[targetIndex][0] ];
   }
@@ -4976,7 +4976,7 @@ export class EnemyPokemon extends Pokemon {
 
   /**
    * Calculates how much damage an attack will actually do to a Boss Pokémon.
-   * 
+   *
    * Returns the normal damage if this Pokémon is not a Boss Pokémon.
    * @param damage The damage dealt to the Pokémon
    * @returns The actual amount of damage the Pokémon receieves
@@ -5007,13 +5007,13 @@ export class EnemyPokemon extends Pokemon {
 
   /**
    * Calculates how many shields will be broken by an attack.
-   * 
+   *
    * Returns 0 if this Pokémon is not a Boss Pokémon.
-   * @param damage 
-   * @returns 
+   * @param damage
+   * @returns
    */
   calculateBossClearedShields(damage: integer): integer {
-    let clearedBossSegmentIndex = this.isBoss()
+    const clearedBossSegmentIndex = this.isBoss()
       ? this.bossSegmentIndex + 1
       : 0;
     if (this.isBoss()) {

@@ -31,7 +31,7 @@ export class EnemyCommandPhase extends FieldPhase {
     super.start();
 
     const enemyPokemon = this.scene.getEnemyField()[this.fieldIndex];
-    console.log(enemyPokemon.getMoveset().map(m => m?.getName()))
+    console.log(enemyPokemon.getMoveset().map(m => m?.getName()));
 
     const battle = this.scene.currentBattle;
 
@@ -69,12 +69,12 @@ export class EnemyCommandPhase extends FieldPhase {
 
             battle.enemySwitchCounter++;
 
-            LoggerTools.enemyPlan[this.fieldIndex*2] = "Switching out"
-            LoggerTools.enemyPlan[this.fieldIndex*2 + 1] = "→ " + this.scene.getEnemyParty()[index].name
+            LoggerTools.enemyPlan[this.fieldIndex * 2] = "Switching out";
+            LoggerTools.enemyPlan[this.fieldIndex * 2 + 1] = "→ " + this.scene.getEnemyParty()[index].name;
 
-            enemyPokemon.flyout.setText()
+            enemyPokemon.flyout.setText();
 
-            this.scene.updateCatchRate()
+            this.scene.updateCatchRate();
 
             return this.end();
           }
@@ -84,39 +84,39 @@ export class EnemyCommandPhase extends FieldPhase {
 
     /** Select a move to use (and a target to use it against, if applicable) */
     const nextMove = enemyPokemon.getNextMove();
-    const mv = new PokemonMove(nextMove.move)
+    const mv = new PokemonMove(nextMove.move);
 
     this.scene.currentBattle.turnCommands[this.fieldIndex + BattlerIndex.ENEMY] =
       { command: Command.FIGHT, move: nextMove, skip: this.skipTurn };
-    const targetLabels = ["Counter", "[PLAYER L]", "[PLAYER R]", "[ENEMY L]", "[ENEMY R]"]
+    const targetLabels = [ "Counter", "[PLAYER L]", "[PLAYER R]", "[ENEMY L]", "[ENEMY R]" ];
     this.scene.getParty().forEach((v, i, a) => {
       if (v.isActive() && v.name) {
-        targetLabels[i + 1] = v.name
+        targetLabels[i + 1] = v.name;
       }
-    })
+    });
     this.scene.getEnemyParty().forEach((v, i, a) => {
       if (v.isActive() && v.name) {
-        targetLabels[i + 3] = v.name
+        targetLabels[i + 3] = v.name;
       }
-    })
+    });
     if (this.fieldIndex == 0) {
-      targetLabels[3] = "Self"
+      targetLabels[3] = "Self";
     }
     if (this.fieldIndex == 1) {
-      targetLabels[4] = "Self"
+      targetLabels[4] = "Self";
     }
     if (targetLabels[1] == targetLabels[2]) {
-      targetLabels[1] += " (L)"
-      targetLabels[2] += " (R)"
+      targetLabels[1] += " (L)";
+      targetLabels[2] += " (R)";
     }
-    console.log(enemyPokemon.name + " selects:", mv.getName() + " → " + nextMove.targets.map((m) => targetLabels[m + 1]))
+    console.log(enemyPokemon.name + " selects:", mv.getName() + " → " + nextMove.targets.map((m) => targetLabels[m + 1]));
     this.scene.currentBattle.enemySwitchCounter = Math.max(this.scene.currentBattle.enemySwitchCounter - 1, 0);
 
-    LoggerTools.enemyPlan[this.fieldIndex*2] = mv.getName()
-    LoggerTools.enemyPlan[this.fieldIndex*2 + 1] = "→ " + nextMove.targets.map((m) => targetLabels[m + 1])
-    this.scene.arenaFlyout.updateFieldText()
+    LoggerTools.enemyPlan[this.fieldIndex * 2] = mv.getName();
+    LoggerTools.enemyPlan[this.fieldIndex * 2 + 1] = "→ " + nextMove.targets.map((m) => targetLabels[m + 1]);
+    this.scene.arenaFlyout.updateFieldText();
 
-    this.scene.updateCatchRate()
+    this.scene.updateCatchRate();
 
     this.end();
   }

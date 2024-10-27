@@ -1013,13 +1013,7 @@ export function setSetting(scene: BattleScene, setting: string, value: integer):
         });
         return false;
       }
-      break;
-    case SettingKeys.Touch_Controls:
-      scene.enableTouchControls = Setting[index].options[value].value !== "Disabled" && hasTouchscreen();
-      const touchControls = document.getElementById("touchControls");
-      if (touchControls) {
-        touchControls.classList.toggle("visible", scene.enableTouchControls);
-      }
+    }
       break;
     case SettingKeys.Vibration:
       scene.enableVibration = Setting[index].options[value].value !== "Disabled" && hasTouchscreen();

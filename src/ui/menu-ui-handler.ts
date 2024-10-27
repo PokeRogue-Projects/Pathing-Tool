@@ -385,7 +385,7 @@ export default class MenuUiHandler extends MessageUiHandler {
         keepOpen: true
       }
     ]
-    
+
     this.accountStatsConfig = {
       xOffset: 98,
       options: accountOptions

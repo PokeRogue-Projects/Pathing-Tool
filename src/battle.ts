@@ -396,12 +396,12 @@ export default class Battle {
     }
     for (var i = 0; i < offset; i++) {
       // Perform useless rolls to offset RNG counter
-      Utils.randSeedInt(5, undefined, "[RNG offset]")
+      Utils.randSeedInt(5, undefined, "[RNG offset]");
     }
     for (var i = 0; i < count; i++) {
-      out.push(Utils.randSeedInt(range, min, `[${i+1}/${count}] ${reason}`))
+      out.push(Utils.randSeedInt(range, min, `[${i + 1}/${count}] ${reason}`));
     }
-    console.log("[SIMULATED] " + reason + " (x" + count + (offset ? " + offset " + offset : "") + ")", out)
+    console.log("[SIMULATED] " + reason + " (x" + count + (offset ? " + offset " + offset : "") + ")", out);
     Phaser.Math.RND.state(state);
     //scene.setScoreText("RNG: " + tempRngCounter + " (Last sim: " + this.rngCounter + ")")
     scene.rngCounter = tempRngCounter;

@@ -33,11 +33,11 @@ export class AttemptCapturePhase extends PokemonPhase {
   }
 
   roll(y?: integer) {
-    var roll = (this.getPokemon() as EnemyPokemon).randSeedInt(65536, undefined, "Capture roll")
+    const roll = (this.getPokemon() as EnemyPokemon).randSeedInt(65536, undefined, "Capture roll");
     if (y != undefined) {
-      console.log(roll, y, roll < y)
+      console.log(roll, y, roll < y);
     } else {
-      console.log(roll)
+      console.log(roll);
     }
     return roll;
   }
@@ -69,7 +69,7 @@ export class AttemptCapturePhase extends PokemonPhase {
     const y = Math.round(65536 / Math.sqrt(Math.sqrt(255 / x)));
     const fpOffset = pokemon.getFieldPositionOffset();
 
-    LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, getPokeballName(this.pokeballType))
+    LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, getPokeballName(this.pokeballType));
 
     const pokeballAtlasKey = getPokeballAtlasKey(this.pokeballType);
     this.pokeball = this.scene.addFieldSprite(16, 80, "pb", pokeballAtlasKey);
@@ -244,7 +244,7 @@ export class AttemptCapturePhase extends PokemonPhase {
         this.removePb();
         this.end();
       };
-      LoggerTools.logCapture(this.scene, this.scene.currentBattle.waveIndex, pokemon)
+      LoggerTools.logCapture(this.scene, this.scene.currentBattle.waveIndex, pokemon);
       const removePokemon = () => {
         this.scene.addFaintedEnemyScore(pokemon);
         this.scene.getPlayerField().filter(p => p.isActive(true)).forEach(playerPokemon => playerPokemon.removeTagsBySourceId(pokemon.id));
@@ -297,7 +297,7 @@ export class AttemptCapturePhase extends PokemonPhase {
                 }, undefined, undefined, undefined, undefined, pokemon.name);
               }, () => {
                 // NO
-                LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, "Don't keep " + pokemon.name)
+                LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, "Don't keep " + pokemon.name);
                 this.scene.ui.setMode(Mode.MESSAGE).then(() => {
                   removePokemon();
                   end();

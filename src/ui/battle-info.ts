@@ -1011,9 +1011,9 @@ export default class BattleInfo extends Phaser.GameObjects.Container {
     if (!this.override) this.switchIconVisibility(visible);
   }
 
-  /** 
+  /**
    * Overrides the state of the team display.
-   * 
+   *
    * The state can't be switched by the player until the override is removed, but you can call this again to change the override state.
    */
   addTeamDisplayOverride(visible: boolean): void {
@@ -1022,7 +1022,7 @@ export default class BattleInfo extends Phaser.GameObjects.Container {
   }
   /**
    * Removes any override on the team display.
-   * 
+   *
    * The team display will then show/hide as required.
    */
   removeTeamDisplayOverride(): void {

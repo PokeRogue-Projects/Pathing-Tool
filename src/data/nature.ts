@@ -61,7 +61,7 @@ export function getNatureIncrease(nature: Nature) {
     case Nature.HASTY:
     case Nature.JOLLY:
     case Nature.NAIVE:
-      return "spe"
+      return "spe";
     case Nature.HARDY:
       //return "atk"
     case Nature.DOCILE:
@@ -73,7 +73,7 @@ export function getNatureIncrease(nature: Nature) {
     case Nature.QUIRKY:
       //return "spe"
     default:
-      return ""
+      return "";
   }
 }
 export function getNatureDecrease(nature: Nature) {
@@ -87,22 +87,22 @@ export function getNatureDecrease(nature: Nature) {
     case Nature.HASTY:
     case Nature.MILD:
     case Nature.GENTLE:
-      return "def"
+      return "def";
     case Nature.ADAMANT:
     case Nature.IMPISH:
     case Nature.JOLLY:
     case Nature.CAREFUL:
-      return "spatk"
+      return "spatk";
     case Nature.NAUGHTY:
     case Nature.LAX:
     case Nature.NAIVE:
     case Nature.RASH:
-      return "spdef"
+      return "spdef";
     case Nature.BRAVE:
     case Nature.RELAXED:
     case Nature.QUIET:
     case Nature.SASSY:
-      return "spe"
+      return "spe";
     case Nature.HARDY:
       //return "atk"
     case Nature.DOCILE:
@@ -114,7 +114,7 @@ export function getNatureDecrease(nature: Nature) {
     case Nature.QUIRKY:
       //return "spe"
     default:
-      return ""
+      return "";
   }
 }
 

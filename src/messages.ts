@@ -12,7 +12,7 @@ export function getPokemonNameWithAffix(pokemon: Pokemon | undefined): string {
     return "Missigno";
   }
   if (pokemon.scene.currentBattle == null) {
-    return pokemon.getNameToRender()
+    return pokemon.getNameToRender();
   }
 
   switch (pokemon.scene.currentBattle.battleSpec) {

@@ -365,7 +365,7 @@ export default class BattleScene extends SceneBase {
       Phaser.Math.RND.realInRange = function (min: number, max: number): number {
         const ret = originalRealInRange.apply(this, [ min, max ]);
         const args = [ "RNG", ++scene.rngCounter, ret / (max - min), `min: ${min} / max: ${max}` ];
-        scene.setScoreText("RNG: " + this.rngCounter + ")")
+        scene.setScoreText("RNG: " + this.rngCounter + ")");
         args.push(`seed: ${scene.rngSeedOverride || scene.waveSeed || scene.seed}`);
         if (scene.rngOffset) {
           args.push(`offset: ${scene.rngOffset}`);
@@ -1196,16 +1196,16 @@ export default class BattleScene extends SceneBase {
   }
 
   generatePokemonForBattle(battle: Battle) {
-    var totalBst = 0;
+    let totalBst = 0;
     battle.enemyLevels?.forEach((level, e) => {
       if (true) {
         if (battle.battleType === BattleType.TRAINER) {
-          const P = battle.trainer?.genPartyMember(e)
+          const P = battle.trainer?.genPartyMember(e);
           if (P != undefined) {
             battle.enemyParty[e] = P;
           }
         } else {
-          LoggerTools.rarityslot[0] = e
+          LoggerTools.rarityslot[0] = e;
           const enemySpecies = this.randomSpecies(battle.waveIndex, level, true);
           battle.enemyParty[e] = this.addEnemyPokemon(enemySpecies, level, TrainerSlot.NONE, !!this.getEncounterBossSegments(battle.waveIndex, level, enemySpecies));
           if (this.currentBattle.battleSpec === BattleSpec.FINAL_BOSS) {
@@ -1234,33 +1234,34 @@ export default class BattleScene extends SceneBase {
       console.log(enemyPokemon.name);
     });
   }
-  
+
 
   doShinyCheck() {
     this.waveShinyChecked = true;
-    var r = LoggerTools.runShinyCheck(this, 1, this.currentBattle.waveIndex)
+    const r = LoggerTools.runShinyCheck(this, 1, this.currentBattle.waveIndex);
     this.waveShinyFlag = r[0] as boolean;
     this.waveShinyMinToBreak = r[1] as integer;
     if (this.waveShinyFlag) {
-      this.arenaFlyout.display2()
+      this.arenaFlyout.display2();
     }
-    LoggerTools.logLuck(this)
+    LoggerTools.logLuck(this);
   }
 
   updateCatchRate() {
-    var txt = ["Turn: " + this.currentBattle.turn]
+    let txt = [ "Turn: " + this.currentBattle.turn ];
     if (!this.getEnemyField()[0].hasTrainer()) {
       this.getEnemyField().forEach((pk, i) => {
-        if (pk.isActive() && pk.hp > 0)
-        txt = txt.concat(LoggerTools.findBest(this, pk))
-      })
+        if (pk.isActive() && pk.hp > 0) {
+          txt = txt.concat(LoggerTools.findBest(this, pk));
+        }
+      });
     }
     if (txt.length > 2) {
-      txt = ["Turn: " + this.currentBattle.turn]
+      txt = [ "Turn: " + this.currentBattle.turn ];
     }
-    this.arenaFlyout.updateFieldText()
-  
-    this.setScoreText(txt.join(" / "))
+    this.arenaFlyout.updateFieldText();
+
+    this.setScoreText(txt.join(" / "));
   }
 
   getDoubleBattleChance(newWaveIndex: number, playerField: PlayerPokemon[]) {
@@ -1419,9 +1420,9 @@ export default class BattleScene extends SceneBase {
       }
     }
 
-    this.battleRNGState = Phaser.Math.RND.state()
+    this.battleRNGState = Phaser.Math.RND.state();
 
-    console.log(this.battleBaseRNGState, this.battleRNGState)
+    console.log(this.battleBaseRNGState, this.battleRNGState);
 
     return this.currentBattle;
   }
@@ -1533,11 +1534,11 @@ export default class BattleScene extends SceneBase {
 
     if (ignoreArena) {
       switch (species.speciesId) {
-      case Species.BURMY:
-      case Species.WORMADAM:
-      case Species.ROTOM:
-      case Species.LYCANROC:
-        return Utils.randSeedInt(species.forms.length, undefined, "Non-area-specific form selection");
+        case Species.BURMY:
+        case Species.WORMADAM:
+        case Species.ROTOM:
+        case Species.LYCANROC:
+          return Utils.randSeedInt(species.forms.length, undefined, "Non-area-specific form selection");
       }
       return 0;
     }
@@ -1651,8 +1652,8 @@ export default class BattleScene extends SceneBase {
     Phaser.Math.RND.sow([ this.waveSeed ]);
     console.log("Wave Seed:", this.waveSeed, wave);
     this.rngCounter = 0;
-    this.battleRNGState = Phaser.Math.RND.state()
-    this.battleBaseRNGState = Phaser.Math.RND.state()
+    this.battleRNGState = Phaser.Math.RND.state();
+    this.battleBaseRNGState = Phaser.Math.RND.state();
   }
 
   executeWithSeedOffset(func: Function, offset: integer, seedOverride?: string): void {
@@ -1812,12 +1813,15 @@ export default class BattleScene extends SceneBase {
     //this.scoreText.setVisible(this.gameMode.isDaily);
   }
   setScoreText(text: string): void {
-    if (this.scoreText == undefined)
+    if (this.scoreText == undefined) {
       return;
-    if (this.scoreText.setText == undefined)
+    }
+    if (this.scoreText.setText == undefined) {
       return;
-    if (this.scoreText.setVisible == undefined)
+    }
+    if (this.scoreText.setVisible == undefined) {
       return;
+    }
     this.scoreText.setText(text);
     this.scoreText.setVisible(true);
   }
@@ -1909,7 +1913,7 @@ export default class BattleScene extends SceneBase {
     if (fromArenaPool) {
       return this.arena.randomSpecies(waveIndex, level, undefined, getPartyLuckValue(this.party));
     }
-    LoggerTools.rarities[LoggerTools.rarityslot[0]] = ""
+    LoggerTools.rarities[LoggerTools.rarityslot[0]] = "";
     const filteredSpecies = speciesFilter ? [ ...new Set(allSpecies.filter(s => s.isCatchable()).filter(speciesFilter).map(s => {
       if (!filterAllEvolutions) {
         while (pokemonPrevolutions.hasOwnProperty(s.speciesId)) {
@@ -2824,7 +2828,7 @@ export default class BattleScene extends SceneBase {
           const modifierChance = this.gameMode.getEnemyModifierChance(isBoss);
           let pokemonModifierChance = modifierChance;
           if (this.currentBattle.battleType === BattleType.TRAINER && this.currentBattle.trainer)
-            pokemonModifierChance = Math.ceil(pokemonModifierChance * this.currentBattle.trainer.getPartyMemberModifierChanceMultiplier(i)); // eslint-disable-line
+            pokemonModifierChance = Math.ceil(pokemonModifierChance * this.currentBattle.trainer.getPartyMemberModifierChanceMultiplier(i));
           let count = 0;
           for (let c = 0; c < chances; c++) {
             if (!Utils.randSeedInt(modifierChance, undefined, "Modifier roll")) {
@@ -2979,7 +2983,7 @@ export default class BattleScene extends SceneBase {
           return mods;
         }
         const rand = Utils.randSeedInt(mods.length, undefined, "Apply shuffled modifiers");
-        return [mods[rand], ...shuffleModifiers(mods.filter((_, i) => i !== rand))];
+        return [ mods[rand], ...shuffleModifiers(mods.filter((_, i) => i !== rand)) ];
       };
       modifiers = shuffleModifiers(modifiers);
     }, scene.currentBattle.turn << 4, scene.waveSeed);
