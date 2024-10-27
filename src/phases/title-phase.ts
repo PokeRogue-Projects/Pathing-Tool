@@ -254,7 +254,7 @@ export class TitlePhase extends Phase {
     if (false)
     if (loggedInUser && loggedInUser!.lastSessionSlot > -1) {
       options.push({
-        label: i18next.t("continue", {ns: "menu"}),
+        label: i18next.t("continue", { ns: "menu" }),
         handler: () => {
           this.loadSaveSlot(this.lastSessionData ? -1 : loggedInUser!.lastSessionSlot);
           return true;
@@ -506,7 +506,7 @@ export class TitlePhase extends Phase {
         this.scene.gameMode = getGameMode(GameModes.DAILY);
 
         this.scene.setSeed(seed);
-        this.scene.resetSeed(1);
+        this.scene.resetSeed(0);
 
         this.scene.money = this.scene.gameMode.getStartingMoney();
 
@@ -530,7 +530,7 @@ export class TitlePhase extends Phase {
         regenerateModifierPoolThresholds(party, ModifierPoolType.DAILY_STARTER);
         const modifiers: Modifier[] = Array(3).fill(null).map(() => modifierTypes.EXP_SHARE().withIdFromFunc(modifierTypes.EXP_SHARE).newModifier())
           .concat(Array(3).fill(null).map(() => modifierTypes.GOLDEN_EXP_CHARM().withIdFromFunc(modifierTypes.GOLDEN_EXP_CHARM).newModifier()))
-          .concat([modifierTypes.MAP().withIdFromFunc(modifierTypes.MAP).newModifier()])
+          .concat([ modifierTypes.MAP().withIdFromFunc(modifierTypes.MAP).newModifier() ])
           .concat(getDailyRunStarterModifiers(party))
           .filter((m) => m !== null);
 

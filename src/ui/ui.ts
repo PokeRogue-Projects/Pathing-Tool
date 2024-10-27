@@ -34,7 +34,6 @@ import SaveSlotSelectUiHandler from "./save-slot-select-ui-handler";
 import TitleUiHandler from "./title-ui-handler";
 import SavingIconHandler from "./saving-icon-handler";
 import UnavailableModalUiHandler from "./unavailable-modal-ui-handler";
-import OutdatedModalUiHandler from "./outdated-modal-ui-handler";
 import SessionReloadModalUiHandler from "./session-reload-modal-ui-handler";
 import { Button } from "#enums/buttons";
 import i18next from "i18next";
@@ -92,7 +91,6 @@ export enum Mode {
   LOADING,
   SESSION_RELOAD,
   UNAVAILABLE,
-  OUTDATED,
   CHALLENGE_SELECT,
   NAME_LOG,
   LOG_HANDLER,
@@ -140,7 +138,6 @@ const noTransitionModes = [
   Mode.LOADING,
   Mode.SESSION_RELOAD,
   Mode.UNAVAILABLE,
-  Mode.OUTDATED,
   Mode.RENAME_POKEMON,
   Mode.TEST_DIALOGUE,
   Mode.AUTO_COMPLETE,
@@ -206,7 +203,6 @@ export default class UI extends Phaser.GameObjects.Container {
       new LoadingModalUiHandler(scene),
       new SessionReloadModalUiHandler(scene),
       new UnavailableModalUiHandler(scene),
-      new OutdatedModalUiHandler(scene),
       new GameChallengesUiHandler(scene),
       new LogNameFormUiHandler(scene),
       new LogSelectUiHandler(scene),
@@ -281,7 +277,7 @@ export default class UI extends Phaser.GameObjects.Container {
     }
 
     const battleScene = this.scene as BattleScene;
-    if ([Mode.CONFIRM, Mode.COMMAND, Mode.FIGHT, Mode.MESSAGE].includes(this.mode)) {
+    if ([ Mode.CONFIRM, Mode.COMMAND, Mode.FIGHT, Mode.MESSAGE ].includes(this.mode)) {
       battleScene?.processInfoButton(pressed);
       return true;
     }

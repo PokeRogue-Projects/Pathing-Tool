@@ -64,8 +64,9 @@ export class EnemyCommandPhase extends FieldPhase {
             const index = trainer.getNextSummonIndex(enemyPokemon.trainerSlot, partyMemberScores);
 
             battle.turnCommands[this.fieldIndex + BattlerIndex.ENEMY] =
-                { command: Command.POKEMON, cursor: index, args: [false], skip: this.skipTurn };
+                { command: Command.POKEMON, cursor: index, args: [ false ], skip: this.skipTurn };
             console.log(enemyPokemon.name + " selects:", "Switch to " + this.scene.getEnemyParty()[index].name);
+
             battle.enemySwitchCounter++;
 
             LoggerTools.enemyPlan[this.fieldIndex*2] = "Switching out"

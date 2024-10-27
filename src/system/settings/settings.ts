@@ -76,16 +76,16 @@ const SHOP_CURSOR_TARGET_OPTIONS: SettingOption[] = [
 
 const shopCursorTargetIndexMap = SHOP_CURSOR_TARGET_OPTIONS.map(option => {
   switch (option.value) {
-  case "Rewards":
-    return ShopCursorTarget.REWARDS;
-  case "Shop":
-    return ShopCursorTarget.SHOP;
-  case "Reroll":
-    return ShopCursorTarget.REROLL;
-  case "Check Team":
-    return ShopCursorTarget.CHECK_TEAM;
-  default:
-    throw new Error(`Unknown value: ${option.value}`);
+    case "Rewards":
+      return ShopCursorTarget.REWARDS;
+    case "Shop":
+      return ShopCursorTarget.SHOP;
+    case "Reroll":
+      return ShopCursorTarget.REROLL;
+    case "Check Team":
+      return ShopCursorTarget.CHECK_TEAM;
+    default:
+      throw new Error(`Unknown value: ${option.value}`);
   }
 });
 
@@ -863,24 +863,14 @@ export function setSetting(scene: BattleScene, setting: string, value: integer):
     scene.showBgmBar = Setting[index].options[value].value === "On";
     break;
   case SettingKeys.Candy_Upgrade_Notification:
-    if (scene.candyUpgradeNotification === value) {
-      break;
-    }
-    scene.candyUpgradeNotification = value;
-    scene.eventTarget.dispatchEvent(new CandyUpgradeNotificationChangedEvent(value));
     break;
-  case SettingKeys.Candy_Upgrade_Display:
-    scene.candyUpgradeDisplay = value;
-  case SettingKeys.Money_Format:
-    switch (Setting[index].options[value].value) {
-    case "Normal":
-      scene.moneyFormat = MoneyFormat.NORMAL;
-      break;
-    case "Abbreviated":
-      scene.moneyFormat = MoneyFormat.ABBREVIATED;
-      break;
-    }
-    scene.updateMoneyText(false);
+  case SettingKeys.Master_Volume:
+    scene.masterVolume = value ? parseInt(Setting[index].options[value].value) * 0.01 : 0;
+    scene.updateSoundVolume();
+    break;
+  case SettingKeys.BGM_Volume:
+    scene.bgmVolume = value ? parseInt(Setting[index].options[value].value) * 0.01 : 0;
+    scene.updateSoundVolume();
     break;
   case SettingKeys.Sprite_Set:
     scene.experimentalSprites = !!value;
@@ -1023,11 +1013,100 @@ export function setSetting(scene: BattleScene, setting: string, value: integer):
         });
         return false;
       }
-    }
-    break;
-  case SettingKeys.Shop_Overlay_Opacity:
-    scene.updateShopOverlayOpacity(parseInt(Setting[index].options[value].value) * .01);
-    break;
+      break;
+    case SettingKeys.Touch_Controls:
+      scene.enableTouchControls = Setting[index].options[value].value !== "Disabled" && hasTouchscreen();
+      const touchControls = document.getElementById("touchControls");
+      if (touchControls) {
+        touchControls.classList.toggle("visible", scene.enableTouchControls);
+      }
+      break;
+    case SettingKeys.Vibration:
+      scene.enableVibration = Setting[index].options[value].value !== "Disabled" && hasTouchscreen();
+      break;
+    case SettingKeys.Type_Hints:
+      scene.typeHints = Setting[index].options[value].value === "On";
+      break;
+    case SettingKeys.Language:
+      if (value) {
+        if (scene.ui) {
+          const cancelHandler = () => {
+            scene.ui.revertMode();
+            (scene.ui.getHandler() as SettingsUiHandler).setOptionCursor(0, 0, true);
+          };
+          const changeLocaleHandler = (locale: string): boolean => {
+            try {
+              i18next.changeLanguage(locale);
+              localStorage.setItem("prLang", locale);
+              cancelHandler();
+              // Reload the whole game to apply the new locale since also some constants are translated
+              window.location.reload();
+              return true;
+            } catch (error) {
+              console.error("Error changing locale:", error);
+              return false;
+            }
+          };
+          scene.ui.setOverlayMode(Mode.OPTION_SELECT, {
+            options: [
+              {
+                label: "English",
+                handler: () => changeLocaleHandler("en")
+              },
+              {
+                label: "Español",
+                handler: () => changeLocaleHandler("es")
+              },
+              {
+                label: "Italiano",
+                handler: () => changeLocaleHandler("it")
+              },
+              {
+                label: "Français",
+                handler: () => changeLocaleHandler("fr")
+              },
+              {
+                label: "Deutsch",
+                handler: () => changeLocaleHandler("de")
+              },
+              {
+                label: "Português (BR)",
+                handler: () => changeLocaleHandler("pt-BR")
+              },
+              {
+                label: "简体中文",
+                handler: () => changeLocaleHandler("zh-CN")
+              },
+              {
+                label: "繁體中文",
+                handler: () => changeLocaleHandler("zh-TW")
+              },
+              {
+                label: "한국어",
+                handler: () => changeLocaleHandler("ko")
+              },
+              {
+                label: "日本語",
+                handler: () => changeLocaleHandler("ja")
+              },
+              // {
+              //   label: "Català",
+              //   handler: () => changeLocaleHandler("ca-ES")
+              // },
+              {
+                label: i18next.t("settings:back"),
+                handler: () => cancelHandler()
+              }
+            ],
+            maxOptions: 7
+          });
+          return false;
+        }
+      }
+      break;
+    case SettingKeys.Shop_Overlay_Opacity:
+      scene.updateShopOverlayOpacity(parseInt(Setting[index].options[value].value) * .01);
+      break;
   }
 
   return true;

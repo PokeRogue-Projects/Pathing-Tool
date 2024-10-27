@@ -36,6 +36,12 @@ export class BattleEndPhase extends BattlePhase {
       this.scene.unshiftPhase(new GameOverPhase(this.scene, true));
     }
 
+    for (const pokemon of this.scene.getField()) {
+      if (pokemon && pokemon.battleSummonData) {
+        pokemon.battleSummonData.waveTurnCount = 1;
+      }
+    }
+
     for (const pokemon of this.scene.getParty().filter(p => p.isAllowedInBattle())) {
       applyPostBattleAbAttrs(PostBattleAbAttr, pokemon);
     }
@@ -52,7 +58,7 @@ export class BattleEndPhase extends BattlePhase {
       if (m instanceof LapsingPokemonHeldItemModifier) {
         args.push(this.scene.getPokemonById(m.pokemonId));
       }
-      if (!m.lapse(args)) {
+      if (!m.lapse(...args)) {
         this.scene.removeModifier(m);
       }
     }

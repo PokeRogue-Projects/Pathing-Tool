@@ -22,7 +22,6 @@ This program is for Windows - it does not have installers for Mac or Linux right
 - Replace `resources/update-game.js` in the offline version's files with the modified installer
 - Run `update-game.bat` in that same folder, typing `y` and pressing enter to confirm you want to install offline mode
 - Select Pokerogue-Projects/Pathing-Tool (option 2 by default) and press enter again
- - "Beta" does nothing right now
 - Wait (it will take a few minutes to install no matter which version you selected)
 - Choose whether you want the offline version of the `pkmn.help` type calculator, then press enter one final time when prompted to close the terminal
 ### Setting up a run
