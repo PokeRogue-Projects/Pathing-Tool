@@ -40,7 +40,7 @@ export class SelectModifierPhase extends BattlePhase {
   generateSelection(rerollOverride: integer, modifierOverride?: integer) {
     //const STATE = Phaser.Math.RND.state() // Store RNG state
     //console.log("====================")
-    //console.log("  Reroll Prediction: " + rerollOverride)
+    console.log("  Reroll Prediction: " + rerollOverride)
     const party = this.scene.getParty();
     regenerateModifierPoolThresholds(party, this.getPoolType(), rerollOverride);
     const modifierCount = new Utils.IntegerHolder(3);
@@ -70,14 +70,29 @@ export class SelectModifierPhase extends BattlePhase {
     }
     this.modifierPredictions[rerollOverride] = typeOptions;
     this.costTiers.push(this.predictionCost);
-    this.predictionCost += this.getRerollCost(false);
+    this.predictionCost += this.getRerollCost(false, rerollOverride);
     //Phaser.Math.RND.state(STATE) // Restore RNG state like nothing happened
+  }
+
+  indent(l: integer = 1, s: string = " ") {
+    var T = "";
+    while (T.length < l) {
+      T += s
+    }
+    return T;
   }
 
   start() {
     super.start();
+    console.log(this.rerollCount)
 
     if (!this.rerollCount && !this.isCopy) {
+      console.log("\n\nReroll Prediction\n\n\n");
+      this.predictionCost = 0;
+      this.costTiers = [];
+      for (let idx = 0; idx < 10 && this.predictionCost < this.scene.money; idx++) {
+        this.generateSelection(idx, undefined);
+      }
       this.updateSeed();
     } else if (this.rerollCount) {
       this.scene.reroll = false;
@@ -115,6 +130,16 @@ export class SelectModifierPhase extends BattlePhase {
     }
 
     this.typeOptions = this.getModifierTypeOptions(modifierCount.value);
+
+    if (this.modifierPredictions && this.modifierPredictions!.length > 0) {
+      for (var i = 0; i < this.modifierPredictions.length; i++) {
+        var T = i == 0 ? "---- Base Shop " : `---- Reroll #${i} `
+        console.log(T + this.indent(25 - T.length, "-") + " ₽" + this.costTiers[i])
+        for (var j = 0; j < this.modifierPredictions[i].length; j++) {
+          console.log("  " + this.modifierPredictions[i][j].type.name + (this.modifierPredictions[i][j].netprice == this.costTiers[i] ? "" : " - ₽" + this.modifierPredictions[i][j].netprice))
+        }
+      }
+    }
 
     const modifierSelectCallback = (rowCursor: integer, cursor: integer) => {
       if (rowCursor < 0 || cursor < 0) {
@@ -317,7 +342,7 @@ export class SelectModifierPhase extends BattlePhase {
     return true;
   }
 
-  getRerollCost(lockRarities: boolean): number {
+  getRerollCost(lockRarities: boolean, rerolls: number = this.rerollCount): number {
     let baseValue = 0;
     if (Overrides.WAIVE_ROLL_FEE_OVERRIDE) {
       return baseValue;
@@ -341,7 +366,7 @@ export class SelectModifierPhase extends BattlePhase {
       multiplier = this.customModifierSettings.rerollMultiplier;
     }
 
-    const baseMultiplier = Math.min(Math.ceil(this.scene.currentBattle.waveIndex / 10) * baseValue * (2 ** this.rerollCount) * multiplier, Number.MAX_SAFE_INTEGER);
+    const baseMultiplier = Math.min(Math.ceil(this.scene.currentBattle.waveIndex / 10) * baseValue * (2 ** rerolls) * multiplier, Number.MAX_SAFE_INTEGER);
 
     // Apply Black Sludge to reroll cost
     const modifiedRerollCost = new NumberHolder(baseMultiplier);
