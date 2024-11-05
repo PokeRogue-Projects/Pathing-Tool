@@ -133,10 +133,10 @@ export class SelectModifierPhase extends BattlePhase {
 
     if (this.modifierPredictions && this.modifierPredictions!.length > 0) {
       for (var i = 0; i < this.modifierPredictions.length; i++) {
-        var T = i == 0 ? "---- Base Shop " : `---- Reroll #${i} `
+        var T = i == 0 ? "----- Base Shop " : `---- Reroll #${i} `
         console.log(T + this.indent(25 - T.length, "-") + " ₽" + this.costTiers[i])
         for (var j = 0; j < this.modifierPredictions[i].length; j++) {
-          console.log("  " + this.modifierPredictions[i][j].type.name + (this.modifierPredictions[i][j].netprice == this.costTiers[i] ? "" : " - ₽" + this.modifierPredictions[i][j].netprice))
+          console.log(" " + (this.modifierPredictions[i][j].type.tier >= ModifierTier.ROGUE ? "★" : " ") + " " + this.modifierPredictions[i][j].type.name + (this.modifierPredictions[i][j].netprice == this.costTiers[i] ? "" : " - ₽" + this.modifierPredictions[i][j].netprice))
         }
       }
     }
