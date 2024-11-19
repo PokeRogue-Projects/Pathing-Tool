@@ -71,7 +71,7 @@ if (iv == 31) maxIVs.push(ivnames[j])
       pk.getBattleInfo().flyoutMenu.flyoutText[1].text = ivDesc
       pk.getBattleInfo().flyoutMenu.flyoutText[2].text = pk.getAbility().name
       pk.getBattleInfo().flyoutMenu.flyoutText[3].text = pk.getPassiveAbility().name
-      if (pk.getAbility().id == pk.getSpeciesForm().abilityHidden) {
+      if (pk.abilityIndex == 2) { // Hidden Ability
         pk.getBattleInfo().flyoutMenu.flyoutText[2].setColor("#e8e8a8")
         pk.getBattleInfo().flyoutMenu.flyoutText[2].text += " (HA)"
       }
