@@ -3,7 +3,9 @@ import { BattlerIndex } from "#app/battle";
 import { Command } from "#app/ui/command-ui-handler";
 import { FieldPhase } from "./field-phase";
 import * as LoggerTools from "../logger";
-import { EnemyPokemon, PokemonMove } from "#app/field/pokemon.js";
+import { Abilities } from "#enums/abilities";
+import { BattlerTagType } from "#enums/battler-tag-type";
+import { PokemonMove } from "#app/field/pokemon.js";
 
 /**
  * Phase for determining an enemy AI's action for the next turn.
@@ -36,6 +38,11 @@ export class EnemyCommandPhase extends FieldPhase {
     const battle = this.scene.currentBattle;
 
     const trainer = battle.trainer;
+
+    if (battle.double && enemyPokemon.hasAbility(Abilities.COMMANDER)
+        && enemyPokemon.getAlly().getTag(BattlerTagType.COMMANDED)) {
+      this.skipTurn = true;
+    }
 
     /**
      * If the enemy has a trainer, decide whether or not the enemy should switch
@@ -89,7 +96,7 @@ export class EnemyCommandPhase extends FieldPhase {
     this.scene.currentBattle.turnCommands[this.fieldIndex + BattlerIndex.ENEMY] =
       { command: Command.FIGHT, move: nextMove, skip: this.skipTurn };
     const targetLabels = [ "Counter", "[PLAYER L]", "[PLAYER R]", "[ENEMY L]", "[ENEMY R]" ];
-    this.scene.getParty().forEach((v, i, a) => {
+    this.scene.getPlayerParty().forEach((v, i, a) => {
       if (v.isActive() && v.name) {
         targetLabels[i + 1] = v.name;
       }

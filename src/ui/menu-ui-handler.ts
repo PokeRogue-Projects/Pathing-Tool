@@ -14,6 +14,7 @@ import BgmBar from "#app/ui/bgm-bar";
 import AwaitableUiHandler from "./awaitable-ui-handler";
 import { SelectModifierPhase } from "#app/phases/select-modifier-phase";
 import { AdminMode, getAdminModeName } from "./admin-ui-handler";
+import { pokerogueApi } from "#app/plugins/api/pokerogue-api";
 
 enum MenuOptions {
   GAME_SETTINGS,
@@ -47,7 +48,7 @@ function goToWebpage(urlIndex: integer) {
   link.click();
   link.remove();
 }
-const donateUrl = "https://github.com/sponsors/patapancakes";
+const donateUrl = "https://github.com/sponsors/pagefaultgames";
 
 export default class MenuUiHandler extends MessageUiHandler {
   private readonly textPadding = 8;
@@ -629,10 +630,7 @@ export default class MenuUiHandler extends MessageUiHandler {
                     window.open(discordUrl, "_self");
                     return true;
                   } else {
-                    Utils.apiPost("/auth/discord/logout", undefined, undefined, true).then(res => {
-                      if (!res.ok) {
-                        console.error(`Unlink failed (${res.status}: ${res.statusText})`);
-                      }
+                    pokerogueApi.unlinkDiscord().then(_isSuccess => {
                       updateUserInfo().then(() => this.scene.reset(true, true));
                     });
                     return true;
@@ -650,10 +648,7 @@ export default class MenuUiHandler extends MessageUiHandler {
                     window.open(googleUrl, "_self");
                     return true;
                   } else {
-                    Utils.apiPost("/auth/google/logout", undefined, undefined, true).then(res => {
-                      if (!res.ok) {
-                        console.error(`Unlink failed (${res.status}: ${res.statusText})`);
-                      }
+                    pokerogueApi.unlinkGoogle().then(_isSuccess => {
                       updateUserInfo().then(() => this.scene.reset(true, true));
                     });
                     return true;
@@ -702,11 +697,7 @@ export default class MenuUiHandler extends MessageUiHandler {
           success = true;
           const doLogout = () => {
             ui.setMode(Mode.LOADING, {
-              buttonActions: [], fadeOut: () => Utils.apiFetch("account/logout", true).then(res => {
-                if (!res.ok) {
-                  console.error(`Log out failed (${res.status}: ${res.statusText})`);
-                }
-                Utils.removeCookie(Utils.sessionIdKey);
+              buttonActions: [], fadeOut: () => pokerogueApi.account.logout().then(() => {
                 updateUserInfo().then(() => this.scene.reset(true, true));
               })
             });

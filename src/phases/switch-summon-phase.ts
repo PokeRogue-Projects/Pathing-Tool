@@ -55,7 +55,7 @@ export class SwitchSummonPhase extends SummonPhase {
       }
     }
 
-    if (!this.doReturn || (this.slotIndex !== -1 && !(this.player ? this.scene.getParty() : this.scene.getEnemyParty())[this.slotIndex])) {
+    if (!this.doReturn || (this.slotIndex !== -1 && !(this.player ? this.scene.getPlayerParty() : this.scene.getEnemyParty())[this.slotIndex])) {
       if (this.player) {
         return this.switchAndSummon();
       } else {
@@ -65,10 +65,8 @@ export class SwitchSummonPhase extends SummonPhase {
     }
 
     const pokemon = this.getPokemon();
-
     (this.player ? this.scene.getEnemyField() : this.scene.getPlayerField()).forEach(enemyPokemon => enemyPokemon.removeTagsBySourceId(pokemon.id));
-
-    if (this.switchType === SwitchType.SWITCH) {
+    if (this.switchType === SwitchType.SWITCH || this.switchType === SwitchType.INITIAL_SWITCH) {
       const substitute = pokemon.getTag(SubstituteTag);
       if (substitute) {
         this.scene.tweens.add({
@@ -114,7 +112,7 @@ export class SwitchSummonPhase extends SummonPhase {
         const batonPassModifier = this.scene.findModifier(m => m instanceof SwitchEffectTransferModifier
           && (m as SwitchEffectTransferModifier).pokemonId === this.lastPokemon.id) as SwitchEffectTransferModifier;
         if (batonPassModifier && !this.scene.findModifier(m => m instanceof SwitchEffectTransferModifier && (m as SwitchEffectTransferModifier).pokemonId === switchedInPokemon.id)) {
-          this.scene.tryTransferHeldItemModifier(batonPassModifier, switchedInPokemon, false);
+          this.scene.tryTransferHeldItemModifier(batonPassModifier, switchedInPokemon, false, undefined, undefined, undefined, false);
         }
       }
     }
@@ -141,7 +139,6 @@ export class SwitchSummonPhase extends SummonPhase {
             switchedInPokemon.setAlpha(0.5);
           }
         } else {
-          switchedInPokemon.resetBattleData();
           switchedInPokemon.resetSummonData();
         }
         this.summon();
@@ -185,6 +182,11 @@ export class SwitchSummonPhase extends SummonPhase {
       if (subTag) {
         pokemon.summonData.tags.push(subTag);
       }
+    }
+
+    if (this.switchType !== SwitchType.INITIAL_SWITCH) {
+      pokemon.resetTurnData();
+      pokemon.turnData.switchedInThisTurn = true;
     }
 
     this.lastPokemon?.resetSummonData();

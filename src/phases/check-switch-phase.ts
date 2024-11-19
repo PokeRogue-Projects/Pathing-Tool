@@ -28,25 +28,29 @@ export class CheckSwitchPhase extends BattlePhase {
 
     const pokemon = this.scene.getPlayerField()[this.fieldIndex];
 
+    // End this phase early...
+
+    // ...if the user is playing in Set Mode
     if (this.scene.battleStyle === BattleStyle.SET) {
-      super.end();
-      return;
+      return super.end();
     }
 
+    // ...if the checked Pokemon is somehow not on the field
     if (this.scene.field.getAll().indexOf(pokemon) === -1) {
       this.scene.unshiftPhase(new SummonMissingPhase(this.scene, this.fieldIndex));
-      super.end();
-      return;
+      return super.end();
     }
 
-    if (!this.scene.getParty().slice(1).filter(p => p.isActive()).length) {
-      super.end();
-      return;
+    // ...if there are no other allowed Pokemon in the player's party to switch with
+    if (!this.scene.getPlayerParty().slice(1).filter(p => p.isActive()).length) {
+      return super.end();
     }
 
-    if (pokemon.getTag(BattlerTagType.FRENZY)) {
-      super.end();
-      return;
+    // ...or if any player Pokemon has an effect that prevents the checked Pokemon from switching
+    if (pokemon.getTag(BattlerTagType.FRENZY)
+        || pokemon.isTrapped()
+        || this.scene.getPlayerField().some(p => p.getTag(BattlerTagType.COMMANDED))) {
+      return super.end();
     }
 
     for (var i = 0; i < this.scene.getEnemyField().length; i++) {
@@ -77,7 +81,7 @@ export class CheckSwitchPhase extends BattlePhase {
         this.scene.ui.setMode(Mode.MESSAGE);
         LoggerTools.isPreSwitch.value = true
         this.scene.tryRemovePhase(p => p instanceof PostSummonPhase && p.player && p.fieldIndex === this.fieldIndex);
-        this.scene.unshiftPhase(new SwitchPhase(this.scene, SwitchType.PRE_SWITCH, this.fieldIndex, false, true));
+        this.scene.unshiftPhase(new SwitchPhase(this.scene, SwitchType.INITIAL_SWITCH, this.fieldIndex, false, true));
         for (var i = 0; i < this.scene.getEnemyField().length; i++) {
           this.scene.getEnemyField()[i].getBattleInfo().flyoutMenu.toggleFlyout(false)
           this.scene.getEnemyField()[i].getBattleInfo().flyoutMenu.flyoutText[0].text = "???"

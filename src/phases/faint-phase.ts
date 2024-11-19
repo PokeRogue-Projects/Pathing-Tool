@@ -1,27 +1,27 @@
-import BattleScene from "#app/battle-scene";
 import { BattlerIndex, BattleType } from "#app/battle";
-import { applyPostFaintAbAttrs, PostFaintAbAttr, applyPostKnockOutAbAttrs, PostKnockOutAbAttr, applyPostVictoryAbAttrs, PostVictoryAbAttr } from "#app/data/ability";
-import { BattlerTagLapseType, DestinyBondTag } from "#app/data/battler-tags";
+import BattleScene from "#app/battle-scene";
+import { applyPostFaintAbAttrs, applyPostKnockOutAbAttrs, applyPostVictoryAbAttrs, PostFaintAbAttr, PostKnockOutAbAttr, PostVictoryAbAttr } from "#app/data/ability";
+import { BattlerTagLapseType, DestinyBondTag, GrudgeTag } from "#app/data/battler-tags";
 import { battleSpecDialogue } from "#app/data/dialogue";
 import { allMoves, PostVictoryStatStageChangeAttr } from "#app/data/move";
+import { SpeciesFormChangeActiveTrigger } from "#app/data/pokemon-forms";
 import { BattleSpec } from "#app/enums/battle-spec";
 import { StatusEffect } from "#app/enums/status-effect";
-import Pokemon, { PokemonMove, EnemyPokemon, PlayerPokemon, HitResult } from "#app/field/pokemon";
+import Pokemon, { EnemyPokemon, HitResult, PlayerPokemon, PokemonMove } from "#app/field/pokemon";
 import { getPokemonNameWithAffix } from "#app/messages";
 import { PokemonInstantReviveModifier } from "#app/modifier/modifier";
+import { SwitchType } from "#enums/switch-type";
 import i18next from "i18next";
 import { DamagePhase } from "./damage-phase";
+import { GameOverPhase } from "./game-over-phase";
 import { PokemonPhase } from "./pokemon-phase";
+import { SwitchPhase } from "./switch-phase";
 import { SwitchSummonPhase } from "./switch-summon-phase";
 import { ToggleDoublePositionPhase } from "./toggle-double-position-phase";
-import { GameOverPhase } from "./game-over-phase";
-import { SwitchPhase } from "./switch-phase";
 import { VictoryPhase } from "./victory-phase";
-import * as LoggerTools from "../logger";
-import { SpeciesFormChangeActiveTrigger } from "#app/data/pokemon-forms";
-import { SwitchType } from "#enums/switch-type";
 import { isNullOrUndefined } from "#app/utils";
 import { FRIENDSHIP_LOSS_FROM_FAINT } from "#app/data/balance/starters";
+import * as LoggerTools from "../logger";
 
 export class FaintPhase extends PokemonPhase {
   /**
@@ -32,39 +32,58 @@ export class FaintPhase extends PokemonPhase {
   /**
    * Destiny Bond tag belonging to the currently fainting Pokemon, if applicable
    */
-  private destinyTag?: DestinyBondTag;
+  private destinyTag?: DestinyBondTag | null;
 
   /**
-   * The source Pokemon that dealt fatal damage and should get KO'd by Destiny Bond, if applicable
+   * Grudge tag belonging to the currently fainting Pokemon, if applicable
+   */
+  private grudgeTag?: GrudgeTag | null;
+
+  /**
+   * The source Pokemon that dealt fatal damage
    */
   private source?: Pokemon;
 
-  constructor(scene: BattleScene, battlerIndex: BattlerIndex, preventEndure: boolean = false, destinyTag?: DestinyBondTag, source?: Pokemon) {
+  constructor(scene: BattleScene, battlerIndex: BattlerIndex, preventEndure: boolean = false, destinyTag?: DestinyBondTag | null, grudgeTag?: GrudgeTag | null, source?: Pokemon) {
     super(scene, battlerIndex);
 
     this.preventEndure = preventEndure;
     this.destinyTag = destinyTag;
+    this.grudgeTag = grudgeTag;
     this.source = source;
   }
 
   start() {
     super.start();
 
+    const faintPokemon = this.getPokemon();
+
     if (!isNullOrUndefined(this.destinyTag) && !isNullOrUndefined(this.source)) {
       this.destinyTag.lapse(this.source, BattlerTagLapseType.CUSTOM);
     }
 
+    if (!isNullOrUndefined(this.grudgeTag) && !isNullOrUndefined(this.source)) {
+      this.grudgeTag.lapse(faintPokemon, BattlerTagLapseType.CUSTOM, this.source);
+    }
+
     if (!this.preventEndure) {
-      const instantReviveModifier = this.scene.applyModifier(PokemonInstantReviveModifier, this.player, this.getPokemon()) as PokemonInstantReviveModifier;
+      const instantReviveModifier = this.scene.applyModifier(PokemonInstantReviveModifier, this.player, faintPokemon) as PokemonInstantReviveModifier;
 
       if (instantReviveModifier) {
-        if (!--instantReviveModifier.stackCount) {
-          this.scene.removeModifier(instantReviveModifier);
-        }
+        faintPokemon.loseHeldItem(instantReviveModifier);
         this.scene.updateModifiers(this.player);
         return this.end();
       }
     }
+
+    /** In case the current pokemon was just switched in, make sure it is counted as participating in the combat */
+    this.scene.getPlayerField().forEach((pokemon, i) => {
+      if (pokemon?.isActive(true)) {
+        if (pokemon.isPlayer()) {
+          this.scene.currentBattle.addParticipant(pokemon as PlayerPokemon);
+        }
+      }
+    });
 
     if (!this.tryOverrideForBattleSpec()) {
       this.doFaint();
@@ -112,7 +131,7 @@ export class FaintPhase extends PokemonPhase {
 
     if (this.player) {
       /** The total number of Pokemon in the player's party that can legally fight */
-      const legalPlayerPokemon = this.scene.getParty().filter(p => p.isAllowedInBattle());
+      const legalPlayerPokemon = this.scene.getPokemonAllowedInBattle();
       /** The total number of legal player Pokemon that aren't currently on the field */
       const legalPlayerPartyPokemon = legalPlayerPokemon.filter(p => !p.isActive(true));
       if (!legalPlayerPokemon.length) {
@@ -130,14 +149,14 @@ export class FaintPhase extends PokemonPhase {
          * push a phase that prompts the player to summon a Pokemon from their party.
          */
         LoggerTools.isFaintSwitch.value = true;
-        this.scene.pushPhase(new SwitchPhase(this.scene, SwitchType.MID_TURN_SWITCH, this.fieldIndex, true, false));
+        this.scene.pushPhase(new SwitchPhase(this.scene, SwitchType.SWITCH, this.fieldIndex, true, false));
       }
     } else {
       this.scene.unshiftPhase(new VictoryPhase(this.scene, this.battlerIndex));
       if ([ BattleType.TRAINER, BattleType.MYSTERY_ENCOUNTER ].includes(this.scene.currentBattle.battleType)) {
         const hasReservePartyMember = !!this.scene.getEnemyParty().filter(p => p.isActive() && !p.isOnField() && p.trainerSlot === (pokemon as EnemyPokemon).trainerSlot).length;
         if (hasReservePartyMember) {
-          this.scene.pushPhase(new SwitchSummonPhase(this.scene, SwitchType.MID_TURN_SWITCH, this.fieldIndex, -1, false, false));
+          this.scene.pushPhase(new SwitchSummonPhase(this.scene, SwitchType.SWITCH, this.fieldIndex, -1, false, false));
         }
       }
     }

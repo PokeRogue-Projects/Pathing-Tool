@@ -1,7 +1,7 @@
 import BattleScene from "#app/battle-scene";
-import { SwitchType } from "#enums/switch-type";
-import PartyUiHandler, { PartyUiMode, PartyOption } from "#app/ui/party-ui-handler";
+import PartyUiHandler, { PartyOption, PartyUiMode } from "#app/ui/party-ui-handler";
 import { Mode } from "#app/ui/ui";
+import { SwitchType } from "#enums/switch-type";
 import { BattlePhase } from "./battle-phase";
 import { SwitchSummonPhase } from "./switch-summon-phase";
 import * as LoggerTools from "../logger";
@@ -39,7 +39,7 @@ export class SwitchPhase extends BattlePhase {
     super.start();
 
     // Skip modal switch if impossible (no remaining party members that aren't in battle)
-    if (this.isModal && !this.scene.getParty().filter(p => p.isAllowedInBattle() && !p.isActive(true)).length) {
+    if (this.isModal && !this.scene.getPlayerParty().filter(p => p.isAllowedInBattle() && !p.isActive(true)).length) {
       LoggerTools.isPreSwitch.value = false;
       LoggerTools.isFaintSwitch.value = false;
       return super.end();
@@ -52,7 +52,7 @@ export class SwitchPhase extends BattlePhase {
      * if the mon should have already been returned but is still alive and well
      * on the field. see also; battle.test.ts
      */
-    if (this.isModal && !this.doReturn && !this.scene.getParty()[this.fieldIndex].isFainted()) {
+    if (this.isModal && !this.doReturn && !this.scene.getPlayerParty()[this.fieldIndex].isFainted()) {
       return super.end();
     }
 
@@ -64,33 +64,13 @@ export class SwitchPhase extends BattlePhase {
     }
 
     // Override field index to 0 in case of double battle where 2/3 remaining legal party members fainted at once
-    const fieldIndex = this.scene.currentBattle.getBattlerCount() === 1 || this.scene.getParty().filter(p => p.isAllowedInBattle()).length > 1 ? this.fieldIndex : 0;
+    const fieldIndex = this.scene.currentBattle.getBattlerCount() === 1 || this.scene.getPokemonAllowedInBattle().length > 1 ? this.fieldIndex : 0;
 
     this.scene.ui.setMode(Mode.PARTY, this.isModal ? PartyUiMode.FAINT_SWITCH : PartyUiMode.POST_BATTLE_SWITCH, fieldIndex, (slotIndex: integer, option: PartyOption) => {
       if (this.isModal) {console.error("Forced Switch Detected")}
       if (slotIndex >= this.scene.currentBattle.getBattlerCount() && slotIndex < 6) {
-        const switchType = (option === PartyOption.PASS_BATON) ? (this.switchType == SwitchType.PRE_SWITCH ? SwitchType.PRE_BATON_PASS : SwitchType.BATON_PASS) : this.switchType;
-        switch (this.switchType) {
-          case SwitchType.SWITCH:
-          case SwitchType.BATON_PASS:
-            // These actions have already been logged by the player; no need to set them
-            break;
-          case SwitchType.MID_TURN_SWITCH:
-            LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `Switch ${LoggerTools.playerPokeName(this.scene, fieldIndex)} to ${LoggerTools.playerPokeName(this.scene, slotIndex)}`);
-            break;
-          case SwitchType.MID_TURN_BATON_PASS:
-            LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `Baton-Pass ${LoggerTools.playerPokeName(this.scene, fieldIndex)} to ${LoggerTools.playerPokeName(this.scene, slotIndex)}`);
-            break;
-          case SwitchType.SHED_TAIL:
-            LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `Shed Tail to ${LoggerTools.playerPokeName(this.scene, slotIndex)}`)
-            break;
-          case SwitchType.PRE_SWITCH:
-            LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `Pre-Switch ${LoggerTools.playerPokeName(this.scene, fieldIndex)} to ${LoggerTools.playerPokeName(this.scene, slotIndex)}`);
-            break;
-          case SwitchType.PRE_BATON_PASS:
-            LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `Pre-Switch & Baton-Pass ${LoggerTools.playerPokeName(this.scene, fieldIndex)} to ${LoggerTools.playerPokeName(this.scene, slotIndex)}`);
-            break;
-        }
+        const switchType = (option === PartyOption.PASS_BATON) ? SwitchType.BATON_PASS : this.switchType;
+        // TODO: Add switch logger
         this.scene.unshiftPhase(new SwitchSummonPhase(this.scene, switchType, fieldIndex, slotIndex, this.doReturn));
       }
       LoggerTools.isPreSwitch.value = false;

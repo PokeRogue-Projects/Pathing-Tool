@@ -172,6 +172,11 @@ export const SettingKeys = {
   Shop_Overlay_Opacity: "SHOP_OVERLAY_OPACITY"
 };
 
+export enum MusicPreference {
+  CONSISTENT,
+  MIXED
+}
+
 /**
  * All Settings not related to controls
  */
@@ -725,7 +730,7 @@ export const Setting: Array<Setting> = [
         label: i18next.t("settings:mixed")
       }
     ],
-    default: 0,
+    default: MusicPreference.MIXED,
     type: SettingType.AUDIO,
     requireReload: true
   },
@@ -1048,8 +1053,8 @@ export function setSetting(scene: BattleScene, setting: string, value: integer):
                 handler: () => changeLocaleHandler("en")
               },
               {
-                label: "Español",
-                handler: () => changeLocaleHandler("es")
+                label: "Español (ES)",
+                handler: () => changeLocaleHandler("es-ES")
               },
               {
                 label: "Italiano",

@@ -14,8 +14,6 @@ import { GachaType } from "#app/enums/gacha-types";
 import i18next from "i18next";
 import { EggTier } from "#enums/egg-type";
 
-const showFuture: boolean = true;
-
 export default class EggGachaUiHandler extends MessageUiHandler {
   private eggGachaContainer: Phaser.GameObjects.Container;
   private eggGachaMessageBox: Phaser.GameObjects.NineSlice;
@@ -109,7 +107,7 @@ export default class EggGachaUiHandler extends MessageUiHandler {
       let pokemonIconX = -20;
       let pokemonIconY = 6;
 
-      if ([ "de", "es", "fr", "ko", "pt-BR" ].includes(currentLanguage)) {
+      if ([ "de", "es-ES", "fr", "ko", "pt-BR" ].includes(currentLanguage)) {
         gachaTextStyle = TextStyle.SMALLER_WINDOW_ALT;
         gachaX = 2;
         gachaY = 2;
@@ -117,7 +115,7 @@ export default class EggGachaUiHandler extends MessageUiHandler {
 
       let legendaryLabelX = gachaX;
       let legendaryLabelY = gachaY;
-      if ([ "de", "es" ].includes(currentLanguage)) {
+      if ([ "de", "es-ES" ].includes(currentLanguage)) {
         pokemonIconX = -25;
         pokemonIconY = 10;
         legendaryLabelX = -6;
@@ -130,7 +128,7 @@ export default class EggGachaUiHandler extends MessageUiHandler {
 
       switch (gachaType as GachaType) {
         case GachaType.LEGENDARY:
-          if ([ "de", "es" ].includes(currentLanguage)) {
+          if ([ "de", "es-ES" ].includes(currentLanguage)) {
             gachaUpLabel.setAlign("center");
             gachaUpLabel.setY(0);
           }
@@ -148,29 +146,13 @@ export default class EggGachaUiHandler extends MessageUiHandler {
           pokemonIcon.setScale(0.5);
           pokemonIcon.setOrigin(0, 0.5);
 
-        const pokemonIcon_3 = this.scene.add.sprite(5, pokemonIconY + 13, "pokemon_icons_0");
-        const pokemonIcon_2 = this.scene.add.sprite(-7, pokemonIconY + 15, "pokemon_icons_0");
-        const pokemonIcon_1 = this.scene.add.sprite(-19, pokemonIconY + 13, "pokemon_icons_0");
-        pokemonIcon_1.setScale(0.4);
-        pokemonIcon_1.setOrigin(0, 0.5);
-        pokemonIcon_1.setVisible(showFuture);
-        pokemonIcon_2.setScale(0.4);
-        pokemonIcon_2.setOrigin(0, 0.5);
-        pokemonIcon_2.setVisible(showFuture);
-        pokemonIcon_3.setScale(0.4);
-        pokemonIcon_3.setOrigin(0, 0.5);
-        pokemonIcon_3.setVisible(showFuture);
-
-        gachaInfoContainer.add(pokemonIcon);
-        gachaInfoContainer.add(pokemonIcon_1);
-        gachaInfoContainer.add(pokemonIcon_2);
-        gachaInfoContainer.add(pokemonIcon_3);
-        break;
-      case GachaType.MOVE:
-        if (["de", "es", "fr", "pt-BR"].includes(currentLanguage)) {
-          gachaUpLabel.setAlign("center");
-          gachaUpLabel.setY(0);
-        }
+          gachaInfoContainer.add(pokemonIcon);
+          break;
+        case GachaType.MOVE:
+          if ([ "de", "es-ES", "fr", "pt-BR" ].includes(currentLanguage)) {
+            gachaUpLabel.setAlign("center");
+            gachaUpLabel.setY(0);
+          }
 
           gachaUpLabel.setText(i18next.t("egg:moveUPGacha"));
           gachaUpLabel.setX(0);
@@ -587,18 +569,13 @@ export default class EggGachaUiHandler extends MessageUiHandler {
     switch (gachaType as GachaType) {
     case GachaType.LEGENDARY:
       this.updateGachaIcon(infoContainer)
-      if (showFuture) {
-        this.updateGachaIcon(infoContainer, 1)
-        this.updateGachaIcon(infoContainer, 2)
-        this.updateGachaIcon(infoContainer, 3)
-      }
       break;
     }
   }
 
-  updateGachaIcon(infoContainer: Phaser.GameObjects.Container, offset: integer = 0): void {
-    const species = getPokemonSpecies(getLegendaryGachaSpeciesForTimestamp(this.scene, new Date().getTime() + offset*86400000));
-    const pokemonIcon = infoContainer.getAt(1 + offset) as Phaser.GameObjects.Sprite;
+  updateGachaIcon(infoContainer: Phaser.GameObjects.Container): void {
+    const species = getPokemonSpecies(getLegendaryGachaSpeciesForTimestamp(this.scene, new Date().getTime()));
+    const pokemonIcon = infoContainer.getAt(1) as Phaser.GameObjects.Sprite;
     pokemonIcon.setTexture(species.getIconAtlasKey(), species.getIconId(false));
   }
 

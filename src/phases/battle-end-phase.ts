@@ -1,9 +1,9 @@
+import BattleScene from "#app/battle-scene";
 import { applyPostBattleAbAttrs, PostBattleAbAttr } from "#app/data/ability";
 import { LapsingPersistentModifier, LapsingPokemonHeldItemModifier } from "#app/modifier/modifier";
 import { BattlePhase } from "./battle-phase";
 import { GameOverPhase } from "./game-over-phase";
 import * as LoggerTools from "../logger";
-import BattleScene from "#app/battle-scene";
 
 export class BattleEndPhase extends BattlePhase {
   /** If true, will increment battles won */
@@ -42,7 +42,7 @@ export class BattleEndPhase extends BattlePhase {
       }
     }
 
-    for (const pokemon of this.scene.getParty().filter(p => p.isAllowedInBattle())) {
+    for (const pokemon of this.scene.getPokemonAllowedInBattle()) {
       applyPostBattleAbAttrs(PostBattleAbAttr, pokemon);
     }
 

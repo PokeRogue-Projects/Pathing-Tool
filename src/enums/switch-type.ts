@@ -3,6 +3,8 @@
  * or {@linkcode SwitchSummonPhase} will carry out.
  */
 export enum SwitchType {
+  /** Switchout specifically for when combat starts and the player is prompted if they will switch Pokemon */
+  INITIAL_SWITCH,
   /** Basic switchout where the Pokemon to switch in is selected */
   SWITCH,
   /** Basic switchout where the Pokemon to switch in is selected
