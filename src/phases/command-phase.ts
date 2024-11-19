@@ -21,6 +21,10 @@ import { isNullOrUndefined } from "#app/utils";
 import { ArenaTagSide } from "#app/data/arena-tag";
 import { ArenaTagType } from "#app/enums/arena-tag-type";
 
+/**
+ * IMPORTANT: Fix command logger!!!
+ */
+
 export class CommandPhase extends FieldPhase {
   protected fieldIndex: integer;
 

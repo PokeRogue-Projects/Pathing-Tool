@@ -16,6 +16,8 @@ import { SelectModifierPhase } from "#app/phases/select-modifier-phase";
 import { AdminMode, getAdminModeName } from "./admin-ui-handler";
 import { pokerogueApi } from "#app/plugins/api/pokerogue-api";
 
+// TODO: Probably should fix this UI stuff
+
 enum MenuOptions {
   GAME_SETTINGS,
   STATS,

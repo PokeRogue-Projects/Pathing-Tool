@@ -59,7 +59,7 @@ export class TurnInitPhase extends FieldPhase {
     LoggerTools.enemyPlan[1] = ""
     LoggerTools.enemyPlan[2] = ""
     LoggerTools.enemyPlan[3] = ""
-    
+
     handleMysteryEncounterBattleStartEffects(this.scene);
 
     // If true, will skip remainder of current phase (and not queue CommandPhases etc.)

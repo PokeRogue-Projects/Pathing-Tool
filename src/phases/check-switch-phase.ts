@@ -57,7 +57,9 @@ export class CheckSwitchPhase extends BattlePhase {
       var pk = this.scene.getEnemyField()[i]
       var maxIVs: string[] = []
       var ivnames = ["HP", "Atk", "Def", "Sp.Atk", "Sp.Def", "Speed"]
-      pk.ivs.forEach((iv, j) => {if (iv == 31) maxIVs.push(ivnames[j])})
+      pk.ivs.forEach((iv, j) => {
+if (iv == 31) maxIVs.push(ivnames[j])
+})
       var ivDesc = maxIVs.join(",")
       if (ivDesc == "") {
         ivDesc = "No Max IVs"
