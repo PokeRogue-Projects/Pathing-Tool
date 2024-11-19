@@ -27,19 +27,6 @@ export class TurnStartPhase extends FieldPhase {
     super(scene);
   }
 
-  logTargets(pokemon: Pokemon, mv: PokemonMove, turnCommand: TurnCommand) {
-    const targets = turnCommand.targets || turnCommand.move!.targets;
-    if (pokemon.isPlayer()) {
-      console.log(turnCommand.targets, turnCommand.move!.targets, LoggerTools.Actions);
-      if (turnCommand.args && turnCommand.args[1] && turnCommand.args[1].isContinuing != undefined) {
-        console.log(mv.getName(), targets);
-      } else if (LoggerTools.Actions[pokemon.getBattlerIndex()].substring(0, 5) == "[???]") {
-        LoggerTools.Actions[pokemon.getBattlerIndex()] = mv.getName() + LoggerTools.Actions[pokemon.getBattlerIndex()].substring(5);
-        console.log(mv.getName(), targets);
-      }
-    }
-  }
-
   /**
    * This orders the active Pokemon on the field by speed into an BattlerIndex array and returns that array.
    * It also checks for Trick Room and reverses the array if it is present.
@@ -175,10 +162,8 @@ export class TurnStartPhase extends FieldPhase {
           if (pokemon.isPlayer()) {
             if (turnCommand.cursor === -1) {
               this.scene.pushPhase(new MovePhase(this.scene, pokemon, turnCommand.targets || turnCommand.move!.targets, move));//TODO: is the bang correct here?
-              this.logTargets(pokemon, move, turnCommand);
             } else {
               const playerPhase = new MovePhase(this.scene, pokemon, turnCommand.targets || turnCommand.move!.targets, move, false, queuedMove.ignorePP);//TODO: is the bang correct here?
-              this.logTargets(pokemon, move, turnCommand);
               this.scene.pushPhase(playerPhase);
             }
           } else {
@@ -190,7 +175,6 @@ export class TurnStartPhase extends FieldPhase {
           break;
         case Command.POKEMON:
           const switchType = turnCommand.args?.[0] ? SwitchType.BATON_PASS : SwitchType.SWITCH;
-          LoggerTools.Actions.push(`${switchType == SwitchType.SWITCH ? "Switch" : "Baton-Pass"} to ${this.scene.getParty()[turnCommand.cursor!].name}`);
           this.scene.unshiftPhase(new SwitchSummonPhase(this.scene, switchType, pokemon.getFieldIndex(), turnCommand.cursor!, true, pokemon.isPlayer()));
           break;
         case Command.RUN:
@@ -228,12 +212,27 @@ export class TurnStartPhase extends FieldPhase {
     this.scene.arenaFlyout.updateFieldText();
 
     if (LoggerTools.Actions.length > 1 && !this.scene.currentBattle.double) {
+      console.error(`Removed second entry (${LoggerTools.Actions[1]}) because this is a Single Battle`)
       LoggerTools.Actions.pop(); // If this is a single battle, but we somehow have two actions, delete the second
     }
     if (LoggerTools.Actions.length > 1 && (LoggerTools.Actions[0] == "" || LoggerTools.Actions[0] == "%SKIP" || LoggerTools.Actions[0] == undefined || LoggerTools.Actions[0] == null)) {
+      if (LoggerTools.Actions[0] == "") {
+        console.error(`Removed first entry (${LoggerTools.Actions[0]}) because it was empty`)
+      } else if (LoggerTools.Actions[0] == "%SKIP") {
+        console.error(`Removed first entry (${LoggerTools.Actions[0]}) because it was flagged to be skipped`)
+      } else if (LoggerTools.Actions[0] == undefined || LoggerTools.Actions[0] == null) {
+        console.error(`Removed first entry (${LoggerTools.Actions[0]}) because it had no value`)
+      }
       LoggerTools.Actions.shift();
     } // If the left slot isn't doing anything, delete its entry
     if (LoggerTools.Actions.length > 1 && (LoggerTools.Actions[1] == "" || LoggerTools.Actions[0] == "%SKIP" || LoggerTools.Actions[1] == undefined || LoggerTools.Actions[1] == null)) {
+      if (LoggerTools.Actions[1] == "") {
+        console.error(`Removed second entry (${LoggerTools.Actions[1]}) because it was empty`)
+      } else if (LoggerTools.Actions[1] == "%SKIP") {
+        console.error(`Removed second entry (${LoggerTools.Actions[1]}) because it was flagged to be skipped`)
+      } else if (LoggerTools.Actions[1] == undefined || LoggerTools.Actions[1] == null) {
+        console.error(`Removed second entry (${LoggerTools.Actions[1]}) because it had no value`)
+      }
       LoggerTools.Actions.pop();
     }  // If the right slot isn't doing anything, delete its entry
 

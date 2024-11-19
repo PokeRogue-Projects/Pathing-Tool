@@ -3,7 +3,7 @@ import i18next from "i18next";
 import * as Utils from "./utils";
 import Pokemon from "./field/pokemon";
 import { PlayerPokemon, EnemyPokemon } from "./field/pokemon";
-import { Nature, getNatureDecrease, getNatureIncrease, getNatureName } from "./data/nature";
+import { getNatureDecrease, getNatureIncrease, getNatureName } from "./data/nature";
 import BattleScene from "./battle-scene";
 import { OptionSelectItem } from "./ui/abstact-option-select-ui-handler";
 import { BypassSpeedChanceModifier, EnemyAttackStatusEffectChanceModifier, ExtraModifierModifier, PokemonHeldItemModifier } from "./modifier/modifier";
@@ -14,7 +14,7 @@ import { Species } from "./enums/species";
 import { GameModes } from "./game-mode";
 import PersistentModifierData from "./system/modifier-data";
 import { getPokemonSpecies } from "./data/pokemon-species";
-import { getStatusEffectCatchRateMultiplier, StatusEffect } from "./data/status-effect";
+import { getStatusEffectCatchRateMultiplier } from "./data/status-effect";
 import { decrypt, SessionSaveData } from "./system/game-data";
 import { loggedInUser } from "./account";
 import PokemonData from "./system/pokemon-data";
@@ -25,6 +25,8 @@ import { Challenges } from "./enums/challenges";
 import { getPlayerModifierTypeOptions, ModifierPoolType, ModifierTypeOption, regenerateModifierPoolThresholds } from "./modifier/modifier-type";
 import { Abilities } from "./enums/abilities";
 import { getBiomeName } from "./data/balance/biomes";
+import { Nature } from "./enums/nature";
+import { StatusEffect } from "./enums/status-effect";
 
 /*
 SECTIONS
@@ -353,25 +355,25 @@ export function getSize(str: string) {
 export function playerPokeName(scene: BattleScene, index: integer | Pokemon | PlayerPokemon) {
   var species: string[] = []
   var dupeSpecies: string[] = []
-  for (var i = 0; i < scene.getParty().length; i++) {
-    if (!species.includes(scene.getParty()[i].name)) {
-      species.push(scene.getParty()[i].name)
-    } else if (!dupeSpecies.includes(scene.getParty()[i].name)) {
-      dupeSpecies.push(scene.getParty()[i].name)
+  for (var i = 0; i < scene.getPlayerParty().length; i++) {
+    if (!species.includes(scene.getPlayerParty()[i].name)) {
+      species.push(scene.getPlayerParty()[i].name)
+    } else if (!dupeSpecies.includes(scene.getPlayerParty()[i].name)) {
+      dupeSpecies.push(scene.getPlayerParty()[i].name)
     }
   }
   if (typeof index == "number") {
     //console.log(scene.getParty()[index], species, dupeSpecies)
-    if (dupeSpecies.includes(scene.getParty()[index].name))
-      return scene.getParty()[index].name + " (Slot " + (index  + 1) + ")"
-    return scene.getParty()[index].name
+    if (dupeSpecies.includes(scene.getPlayerParty()[index].name))
+      return scene.getPlayerParty()[index].name + " (Slot " + (index  + 1) + ")"
+    return scene.getPlayerParty()[index].name
   }
   if (!index.isPlayer()) {
     return "[Not a player Pokemon??]"
   }
   //console.log(index.name, species, dupeSpecies)
   if (dupeSpecies.includes(index.name))
-    return index.name + " (Slot " + (scene.getParty().indexOf(index as PlayerPokemon) + 1) + ")"
+    return index.name + " (Slot " + (scene.getPlayerParty().indexOf(index as PlayerPokemon) + 1) + ")"
   return index.name
 }
 /**
@@ -1725,8 +1727,8 @@ export function logCapture(scene: BattleScene, floor: integer = scene.currentBat
  */
 export function logPlayerTeam(scene: BattleScene) {
   var drpd = getDRPD(scene)
-  console.log(`Logging player starters: ${scene.getParty().map(p => p.name).join(", ")}`)
-  var P = scene.getParty()
+  console.log(`Logging player starters: ${scene.getPlayerParty().map(p => p.name).join(", ")}`)
+  var P = scene.getPlayerParty()
   for (var i = 0; i < P.length; i++) {
     drpd.starters![i] = exportPokemon(P[i])
   }
@@ -1907,7 +1909,7 @@ export const tierNames = [
 export function shinyCheckStep(scene: BattleScene, predictionCost: Utils.IntegerHolder, rerollOverride: integer, modifierOverride?: integer) {
   var minLuck = -1
   var modifierPredictions: ModifierTypeOption[][] = []
-  const party = scene.getParty();
+  const party = scene.getPlayerParty();
   regenerateModifierPoolThresholds(party, ModifierPoolType.PLAYER, rerollOverride);
   const modifierCount = new Utils.IntegerHolder(3);
   scene.applyModifiers(ExtraModifierModifier, true, modifierCount);
@@ -1915,7 +1917,7 @@ export function shinyCheckStep(scene: BattleScene, predictionCost: Utils.Integer
     //modifierCount.value = modifierOverride
   }
   var isOk = true;
-  const typeOptions: ModifierTypeOption[] = getPlayerModifierTypeOptions(modifierCount.value, scene.getParty());
+  const typeOptions: ModifierTypeOption[] = getPlayerModifierTypeOptions(modifierCount.value, scene.getPlayerParty());
   typeOptions.forEach((option, idx) => {
     let lastTier = option.type!.tier
     if (option.alternates && option.alternates.length > 0) {

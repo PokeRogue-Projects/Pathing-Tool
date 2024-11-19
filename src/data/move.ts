@@ -5991,7 +5991,7 @@ export class ForceSwitchOutAttr extends MoveEffectAttr {
   }
 
   isBatonPass() {
-    return this.switchType === SwitchType.BATON_PASS || this.switchType === SwitchType.MID_TURN_BATON_PASS;
+    return this.switchType === SwitchType.BATON_PASS;
   }
 
   apply(user: Pokemon, target: Pokemon, move: Move, args: any[]): boolean {
@@ -6026,7 +6026,7 @@ export class ForceSwitchOutAttr extends MoveEffectAttr {
 
       if (switchOutTarget.hp > 0) {
         switchOutTarget.leaveField(this.switchType === SwitchType.SWITCH);
-        user.scene.prependToPhase(new SwitchPhase(user.scene, this.switchType == SwitchType.SHED_TAIL ? SwitchType.SHED_TAIL : (this.switchType == SwitchType.BATON_PASS ? SwitchType.MID_TURN_BATON_PASS : SwitchType.MID_TURN_SWITCH), switchOutTarget.getFieldIndex(), true, true), MoveEndPhase);
+        user.scene.prependToPhase(new SwitchPhase(user.scene, this.switchType == SwitchType.SHED_TAIL ? SwitchType.SHED_TAIL : (this.switchType == SwitchType.BATON_PASS ? SwitchType.BATON_PASS : SwitchType.SWITCH), switchOutTarget.getFieldIndex(), true, true), MoveEndPhase);
         return true;
       }
       return false;
