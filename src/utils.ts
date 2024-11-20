@@ -8,6 +8,15 @@ export type nil = null | undefined;
 
 export const MissingTextureKey = "__MISSING";
 
+/** If enabled, the mod will push Log messages to the console when an RNG roll is performed. */
+const doRNGLogging = false;
+/** If enabled, the mod will not log simulated RNG rolls. */
+export const hideSimRNGLogging = false;
+/** If enabled, the mod will push Error messages to the console when an RNG roll is performed without being assigned a label. */
+const doUnlabeledRNGLogging = false;
+/** If enabled, the mod will push Log messages to the console when an RNG roll is performed that the Battle Seed does not influence. */
+const doUnseededRNGLogging = false;
+
 export function toReadableString(str: string): string {
   return str.replace(/\_/g, " ").split(" ").map(s => `${s.slice(0, 1)}${s.slice(1).toLowerCase()}`).join(" ");
 }
@@ -89,8 +98,8 @@ export function randInt(range: integer, min: integer = 0, reason?: string): inte
     return min;
   }
   let V = Math.floor(Math.random() * range) + min;
-  if (reason != "%HIDE") {
-    //console.log("[unseeded] " + (reason ? reason : "randInt"), V)
+  if (reason != "%HIDE" && doRNGLogging && doUnseededRNGLogging) {
+    console.log("[unseeded] " + (reason ? reason : "randInt"), V)
   }
   return V;
 }
@@ -106,10 +115,10 @@ export function randSeedInt(range: integer, min: integer = 0, reason?: string): 
     return min;
   }
   let V = Phaser.Math.RND.integerInRange(min, (range - 1) + min);
-  if (reason != "%HIDE") {
+  if (reason != "%HIDE" && doRNGLogging) {
     if (reason) {
       console.log(reason, V)
-    } else {
+    } else if (doUnlabeledRNGLogging) {
       console.error("unlabeled randSeedInt", V)
     }
   }

@@ -68,8 +68,8 @@ export class SwitchPhase extends BattlePhase {
 
     this.scene.ui.setMode(Mode.PARTY, this.isModal ? PartyUiMode.FAINT_SWITCH : PartyUiMode.POST_BATTLE_SWITCH, fieldIndex, (slotIndex: integer, option: PartyOption) => {
       if (this.isModal) {
-console.error("Forced Switch Detected")
-}
+        console.error("Forced Switch Detected")
+      }
       if (slotIndex >= this.scene.currentBattle.getBattlerCount() && slotIndex < 6) {
         const switchType = (option === PartyOption.PASS_BATON) ? SwitchType.BATON_PASS : this.switchType;
         // TODO: Re-add switch logger
