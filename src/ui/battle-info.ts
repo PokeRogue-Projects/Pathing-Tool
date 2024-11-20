@@ -3,9 +3,10 @@ import { getLevelTotalExp, getLevelRelExp } from "../data/exp";
 import * as Utils from "../utils";
 import { addTextObject, TextStyle } from "./text";
 import { getGenderSymbol, getGenderColor, Gender } from "../data/gender";
-import { StatusEffect } from "../data/status-effect";
+import { StatusEffect } from "#enums/status-effect";
 import BattleScene from "../battle-scene";
-import { Type, getTypeRgb } from "../data/type";
+import { getTypeRgb } from "#app/data/type";
+import { Type } from "#enums/type";
 import { getVariantTint } from "#app/data/variant";
 import { Stat } from "#enums/stat";
 import BattleFlyout from "./battle-flyout";
@@ -355,7 +356,7 @@ export default class BattleInfo extends Phaser.GameObjects.Container {
     this.teraIcon.setVisible(this.lastTeraType !== Type.UNKNOWN);
     this.teraIcon.on("pointerover", () => {
       if (this.lastTeraType !== Type.UNKNOWN) {
-        (this.scene as BattleScene).ui.showTooltip("", i18next.t("fightUiHandler:teraHover", {type: i18next.t(`pokemonInfo:Type.${Type[this.lastTeraType]}`) }));
+        (this.scene as BattleScene).ui.showTooltip("", i18next.t("fightUiHandler:teraHover", { type: i18next.t(`pokemonInfo:Type.${Type[this.lastTeraType]}`) }));
       }
     });
     this.teraIcon.on("pointerout", () => (this.scene as BattleScene).ui.hideTooltip());
@@ -811,7 +812,7 @@ export default class BattleInfo extends Phaser.GameObjects.Container {
       };
 
       const updatePokemonHp = () => {
-        let duration = !instant ? Utils.clampInt(Math.abs((this.lastHp) - pokemon.hp) * 5, 250, 5000) : 0;
+        let duration = !instant ? Phaser.Math.Clamp(Math.abs((this.lastHp) - pokemon.hp) * 5, 250, 5000) : 0;
         const speed = (this.scene as BattleScene).hpBarSpeed;
         if (speed) {
           duration = speed >= 3 ? 0 : duration / Math.pow(2, speed);
@@ -1011,9 +1012,9 @@ export default class BattleInfo extends Phaser.GameObjects.Container {
     if (!this.override) this.switchIconVisibility(visible);
   }
 
-  /** 
+  /**
    * Overrides the state of the team display.
-   * 
+   *
    * The state can't be switched by the player until the override is removed, but you can call this again to change the override state.
    */
   addTeamDisplayOverride(visible: boolean): void {
@@ -1022,7 +1023,7 @@ export default class BattleInfo extends Phaser.GameObjects.Container {
   }
   /**
    * Removes any override on the team display.
-   * 
+   *
    * The team display will then show/hide as required.
    */
   removeTeamDisplayOverride(): void {

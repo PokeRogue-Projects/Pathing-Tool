@@ -1,7 +1,7 @@
 import { Ability, allAbilities } from "#app/data/ability";
 import { EnemyPartyConfig, initBattleWithEnemyConfig, leaveEncounterWithoutBattle, selectPokemonForOption, setEncounterRewards, } from "#app/data/mystery-encounters/utils/encounter-phase-utils";
-import { getNatureName, Nature } from "#app/data/nature";
-import { speciesStarters } from "#app/data/pokemon-species";
+import { getNatureName } from "#app/data/nature";
+import { speciesStarterCosts } from "#app/data/balance/starters";
 import Pokemon, { PlayerPokemon } from "#app/field/pokemon";
 import { PokemonHeldItemModifier } from "#app/modifier/modifier";
 import { AbilityAttr } from "#app/system/game-data";
@@ -21,9 +21,10 @@ import i18next from "i18next";
 import { getStatKey } from "#enums/stat";
 import { CLASSIC_MODE_MYSTERY_ENCOUNTER_WAVES } from "#app/game-mode";
 import { isPokemonValidForEncounterOptionSelection } from "#app/data/mystery-encounters/utils/encounter-pokemon-utils";
+import type { Nature } from "#enums/nature";
 
 /** The i18n namespace for the encounter */
-const namespace = "mysteryEncounter:trainingSession";
+const namespace = "mysteryEncounters/trainingSession";
 
 /**
  * Training Session encounter.
@@ -37,6 +38,7 @@ export const TrainingSessionEncounter: MysteryEncounter =
     .withScenePartySizeRequirement(2, 6, true) // Must have at least 2 unfainted pokemon in party
     .withFleeAllowed(false)
     .withHideWildIntroMessage(true)
+    .withPreventGameStatsUpdates(true) // Do not count the Pokemon as seen or defeated since it is ours
     .withIntroSpriteConfigs([
       {
         spriteKey: "training_session_gear",
@@ -49,22 +51,23 @@ export const TrainingSessionEncounter: MysteryEncounter =
     ])
     .withIntroDialogue([
       {
-        text: `${namespace}.intro`,
+        text: `${namespace}:intro`,
       }
     ])
-    .withTitle(`${namespace}.title`)
-    .withDescription(`${namespace}.description`)
-    .withQuery(`${namespace}.query`)
+    .setLocalizationKey(`${namespace}`)
+    .withTitle(`${namespace}:title`)
+    .withDescription(`${namespace}:description`)
+    .withQuery(`${namespace}:query`)
     .withOption(
       MysteryEncounterOptionBuilder
         .newOptionWithMode(MysteryEncounterOptionMode.DEFAULT)
         .withHasDexProgress(true)
         .withDialogue({
-          buttonLabel: `${namespace}.option.1.label`,
-          buttonTooltip: `${namespace}.option.1.tooltip`,
+          buttonLabel: `${namespace}:option.1.label`,
+          buttonTooltip: `${namespace}:option.1.tooltip`,
           selected: [
             {
-              text: `${namespace}.option.selected`,
+              text: `${namespace}:option.selected`,
             },
           ],
         })
@@ -78,7 +81,7 @@ export const TrainingSessionEncounter: MysteryEncounter =
 
           // Only Pokemon that are not KOed/legal can be trained
           const selectableFilter = (pokemon: Pokemon) => {
-            return isPokemonValidForEncounterOptionSelection(pokemon, scene, `${namespace}.invalid_selection`);
+            return isPokemonValidForEncounterOptionSelection(pokemon, scene, `${namespace}:invalid_selection`);
           };
 
           return selectPokemonForOption(scene, onPokemonSelected, undefined, selectableFilter);
@@ -150,18 +153,18 @@ export const TrainingSessionEncounter: MysteryEncounter =
             }
 
             // Add pokemon and mods back
-            scene.getParty().push(playerPokemon);
+            scene.getPlayerParty().push(playerPokemon);
             for (const mod of modifiers.value) {
               mod.pokemonId = playerPokemon.id;
               scene.addModifier(mod, true, false, false, true);
             }
             scene.updateModifiers(true);
-            queueEncounterMessage(scene, `${namespace}.option.1.finished`);
+            queueEncounterMessage(scene, `${namespace}:option.1.finished`);
           };
 
           setEncounterRewards(scene, { fillRemaining: true }, undefined, onBeforeRewardsPhase);
 
-          return initBattleWithEnemyConfig(scene, config);
+          await initBattleWithEnemyConfig(scene, config);
         })
         .build()
     )
@@ -170,12 +173,12 @@ export const TrainingSessionEncounter: MysteryEncounter =
         .newOptionWithMode(MysteryEncounterOptionMode.DEFAULT)
         .withHasDexProgress(true)
         .withDialogue({
-          buttonLabel: `${namespace}.option.2.label`,
-          buttonTooltip: `${namespace}.option.2.tooltip`,
-          secondOptionPrompt: `${namespace}.option.2.select_prompt`,
+          buttonLabel: `${namespace}:option.2.label`,
+          buttonTooltip: `${namespace}:option.2.tooltip`,
+          secondOptionPrompt: `${namespace}:option.2.select_prompt`,
           selected: [
             {
-              text: `${namespace}.option.selected`,
+              text: `${namespace}:option.selected`,
             },
           ],
         })
@@ -204,7 +207,7 @@ export const TrainingSessionEncounter: MysteryEncounter =
 
           // Only Pokemon that are not KOed/legal can be trained
           const selectableFilter = (pokemon: Pokemon) => {
-            return isPokemonValidForEncounterOptionSelection(pokemon, scene, `${namespace}.invalid_selection`);
+            return isPokemonValidForEncounterOptionSelection(pokemon, scene, `${namespace}:invalid_selection`);
           };
 
           return selectPokemonForOption(scene, onPokemonSelected, undefined, selectableFilter);
@@ -221,13 +224,13 @@ export const TrainingSessionEncounter: MysteryEncounter =
           scene.removePokemonFromPlayerParty(playerPokemon, false);
 
           const onBeforeRewardsPhase = () => {
-            queueEncounterMessage(scene, `${namespace}.option.2.finished`);
+            queueEncounterMessage(scene, `${namespace}:option.2.finished`);
             // Add the pokemon back to party with Nature change
-            playerPokemon.setNature(encounter.misc.chosenNature);
-            scene.gameData.setPokemonCaught(playerPokemon, false);
+            playerPokemon.setCustomNature(encounter.misc.chosenNature);
+            scene.gameData.unlockSpeciesNature(playerPokemon.species, encounter.misc.chosenNature);
 
             // Add pokemon and modifiers back
-            scene.getParty().push(playerPokemon);
+            scene.getPlayerParty().push(playerPokemon);
             for (const mod of modifiers.value) {
               mod.pokemonId = playerPokemon.id;
               scene.addModifier(mod, true, false, false, true);
@@ -237,7 +240,7 @@ export const TrainingSessionEncounter: MysteryEncounter =
 
           setEncounterRewards(scene, { fillRemaining: true }, undefined, onBeforeRewardsPhase);
 
-          return initBattleWithEnemyConfig(scene, config);
+          await initBattleWithEnemyConfig(scene, config);
         })
         .build()
     )
@@ -246,12 +249,12 @@ export const TrainingSessionEncounter: MysteryEncounter =
         .newOptionWithMode(MysteryEncounterOptionMode.DEFAULT)
         .withHasDexProgress(true)
         .withDialogue({
-          buttonLabel: `${namespace}.option.3.label`,
-          buttonTooltip: `${namespace}.option.3.tooltip`,
-          secondOptionPrompt: `${namespace}.option.3.select_prompt`,
+          buttonLabel: `${namespace}:option.3.label`,
+          buttonTooltip: `${namespace}:option.3.tooltip`,
+          secondOptionPrompt: `${namespace}:option.3.select_prompt`,
           selected: [
             {
-              text: `${namespace}.option.selected`,
+              text: `${namespace}:option.selected`,
             },
           ],
         })
@@ -295,7 +298,7 @@ export const TrainingSessionEncounter: MysteryEncounter =
 
           // Only Pokemon that are not KOed/legal can be trained
           const selectableFilter = (pokemon: Pokemon) => {
-            return isPokemonValidForEncounterOptionSelection(pokemon, scene, `${namespace}.invalid_selection`);
+            return isPokemonValidForEncounterOptionSelection(pokemon, scene, `${namespace}:invalid_selection`);
           };
 
           return selectPokemonForOption(scene, onPokemonSelected, undefined, selectableFilter);
@@ -316,7 +319,7 @@ export const TrainingSessionEncounter: MysteryEncounter =
           scene.removePokemonFromPlayerParty(playerPokemon, false);
 
           const onBeforeRewardsPhase = () => {
-            queueEncounterMessage(scene, `${namespace}.option.3.finished`);
+            queueEncounterMessage(scene, `${namespace}:option.3.finished`);
             // Add the pokemon back to party with ability change
             const abilityIndex = encounter.misc.abilityIndex;
 
@@ -326,7 +329,7 @@ export const TrainingSessionEncounter: MysteryEncounter =
               // Only update the fusion's dex data if the Pokemon is already caught in dex (ignore rentals)
               const rootFusionSpecies = playerPokemon.fusionSpecies?.getRootSpeciesId();
               if (!isNullOrUndefined(rootFusionSpecies)
-                && speciesStarters.hasOwnProperty(rootFusionSpecies)
+                && speciesStarterCosts.hasOwnProperty(rootFusionSpecies)
                 && !!scene.gameData.dexData[rootFusionSpecies].caughtAttr) {
                 scene.gameData.starterData[rootFusionSpecies].abilityAttr |= playerPokemon.fusionAbilityIndex !== 1 || playerPokemon.fusionSpecies?.ability2
                   ? 1 << playerPokemon.fusionAbilityIndex
@@ -340,7 +343,7 @@ export const TrainingSessionEncounter: MysteryEncounter =
             scene.gameData.setPokemonCaught(playerPokemon, false);
 
             // Add pokemon and mods back
-            scene.getParty().push(playerPokemon);
+            scene.getPlayerParty().push(playerPokemon);
             for (const mod of modifiers.value) {
               mod.pokemonId = playerPokemon.id;
               scene.addModifier(mod, true, false, false, true);
@@ -350,17 +353,17 @@ export const TrainingSessionEncounter: MysteryEncounter =
 
           setEncounterRewards(scene, { fillRemaining: true }, undefined, onBeforeRewardsPhase);
 
-          return initBattleWithEnemyConfig(scene, config);
+          await initBattleWithEnemyConfig(scene, config);
         })
         .build()
     )
     .withSimpleOption(
       {
-        buttonLabel: `${namespace}.option.4.label`,
-        buttonTooltip: `${namespace}.option.4.tooltip`,
+        buttonLabel: `${namespace}:option.4.label`,
+        buttonTooltip: `${namespace}:option.4.tooltip`,
         selected: [
           {
-            text: `${namespace}.option.4.selected`,
+            text: `${namespace}:option.4.selected`,
           },
         ],
       },

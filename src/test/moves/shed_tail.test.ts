@@ -1,4 +1,5 @@
 import { SubstituteTag } from "#app/data/battler-tags";
+import { MoveResult } from "#app/field/pokemon";
 import { Abilities } from "#enums/abilities";
 import { Moves } from "#enums/moves";
 import { Species } from "#enums/species";
@@ -23,7 +24,7 @@ describe("Moves - Shed Tail", () => {
   beforeEach(() => {
     game = new GameManager(phaserGame);
     game.override
-      .moveset([Moves.SHED_TAIL])
+      .moveset([ Moves.SHED_TAIL ])
       .battleType("single")
       .enemySpecies(Species.SNORLAX)
       .enemyAbility(Abilities.BALL_FETCH)
@@ -31,7 +32,7 @@ describe("Moves - Shed Tail", () => {
   });
 
   it("transfers a Substitute doll to the switched in Pokemon", async () => {
-    await game.classicMode.startBattle([Species.MAGIKARP, Species.FEEBAS]);
+    await game.classicMode.startBattle([ Species.MAGIKARP, Species.FEEBAS ]);
 
     const magikarp = game.scene.getPlayerPokemon()!;
 
@@ -52,5 +53,19 @@ describe("Moves - Shed Tail", () => {
     expect(magikarp.hp).toBe(Math.ceil(magikarp.getMaxHp() / 2));
     expect(substituteTag).toBeDefined();
     expect(substituteTag?.hp).toBe(Math.floor(magikarp.getMaxHp() / 4));
+  });
+
+  it("should fail if no ally is available to switch in", async () => {
+    await game.classicMode.startBattle([ Species.MAGIKARP ]);
+
+    const magikarp = game.scene.getPlayerPokemon()!;
+    expect(game.scene.getPlayerParty().length).toBe(1);
+
+    game.move.select(Moves.SHED_TAIL);
+
+    await game.phaseInterceptor.to("TurnEndPhase", false);
+
+    expect(magikarp.isOnField()).toBeTruthy();
+    expect(magikarp.getLastXMoves()[0].result).toBe(MoveResult.FAIL);
   });
 });

@@ -1,7 +1,7 @@
 import { addTextObject, TextStyle } from "./text";
 import BattleScene from "#app/battle-scene";
 import { ArenaTagSide, ArenaTrapTag } from "#app/data/arena-tag";
-import { WeatherType } from "#app/data/weather";
+import { WeatherType } from "#enums/weather-type";
 import { TerrainType } from "#app/data/terrain";
 import { addWindow, WindowVariant } from "./ui-theme";
 import { ArenaEvent, ArenaEventType, TagAddedEvent, TagRemovedEvent, TerrainChangedEvent, WeatherChangedEvent } from "#app/events/arena";
@@ -13,9 +13,10 @@ import i18next, {ParseKeys} from "i18next";
 import { getNatureDecrease, getNatureIncrease, getNatureName } from "#app/data/nature.js";
 import * as LoggerTools from "../logger";
 import { Gender } from "#app/data/gender.js";
-import { getBiomeName } from "#app/data/biomes.js";
 import { getLuckString } from "#app/modifier/modifier-type.js";
 import { Species } from "#app/enums/species.js";
+import { Region } from "#app/data/pokemon-species.js";
+import { getBiomeName } from "#app/data/balance/biomes.js";
 
 /** Enum used to differentiate {@linkcode Arena} effects */
 enum ArenaEffectType {
@@ -249,7 +250,6 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
   }
 
 
-
   /** Clears out the current string stored in all arena effect texts */
   private clearText() {
     this.flyoutTextPlayer.text = "";
@@ -330,12 +330,56 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
             formtext = " (" + poke[i].species.forms?.[poke[i].formIndex]?.formName.substring(0, poke[i].species.forms?.[poke[i].formIndex]?.formName.length - " Style".length) + ")"
           }
         }
+        var regionTag = ""
+        switch (poke[i].species.getRegion()) {
+          case Region.ALOLA:
+            regionTag = "Alolan ";
+            break;
+          case Region.GALAR:
+            regionTag = "Galarian ";
+            break;
+          case Region.HISUI:
+            regionTag = "Hisuian ";
+            break;
+          case Region.PALDEA:
+            regionTag = "Paldean ";
+            break;
+        }
         const beforeText1 = this.flyoutTextPlayer.text
         const beforeText2 = this.flyoutTextEnemy.text
-        this.flyoutTextPlayer.text = poke[i].name + formtext + " " + (poke[i].gender == Gender.MALE ? "♂" : (poke[i].gender == Gender.FEMALE ? "♀" : "-")) + " " + poke[i].level
+        this.flyoutTextPlayer.text = regionTag + poke[i].name + formtext + " " + (poke[i].gender == Gender.MALE ? "♂" : (poke[i].gender == Gender.FEMALE ? "♀" : "-")) + " " + poke[i].level
         this.flyoutTextEnemy.text = poke[i].getAbility().name + (poke[i].isBoss() ? ", " + poke[i].getPassiveAbility().name : "") + " / " + getNatureName(poke[i].nature) + (getNatureIncrease(poke[i].nature) != "" ? " (+" + getNatureIncrease(poke[i].nature) + " -" + getNatureDecrease(poke[i].nature) + ")" : "")
         if (this.flyoutTextEnemy.width + this.flyoutTextPlayer.width > this.flyoutWidth * 6 - 120) {
+          switch (poke[i].species.getRegion()) {
+            case Region.NORMAL:
+              regionTag = "";
+              break;
+            case Region.ALOLA:
+              regionTag = "A. ";
+              break;
+            case Region.GALAR:
+              regionTag = "G. ";
+              break;
+            case Region.HISUI:
+              regionTag = "H. ";
+              break;
+            case Region.PALDEA:
+              regionTag = "P. ";
+              break;
+          }
+          this.flyoutTextPlayer.text = regionTag + poke[i].name + formtext + " " + (poke[i].gender == Gender.MALE ? "♂" : (poke[i].gender == Gender.FEMALE ? "♀" : "-")) + " " + poke[i].level
+        }
+        if (this.flyoutTextEnemy.width + this.flyoutTextPlayer.width > this.flyoutWidth * 6 - 120) {
           this.flyoutTextEnemy.text = poke[i].getAbility().name + (poke[i].isBoss() ? ", " + poke[i].getPassiveAbility().name : "") + " / " + getNatureName(poke[i].nature)
+        }
+        if (this.flyoutTextEnemy.width + this.flyoutTextPlayer.width > this.flyoutWidth * 6 - 120) {
+          this.flyoutTextPlayer.text = regionTag + poke[i].name + formtext + " " + (poke[i].gender == Gender.MALE ? "♂" : (poke[i].gender == Gender.FEMALE ? "♀" : "-"))
+        }
+        if (this.flyoutTextEnemy.width + this.flyoutTextPlayer.width > this.flyoutWidth * 6 - 120) {
+          this.flyoutTextEnemy.text = poke[i].getAbility().name + " / " + getNatureName(poke[i].nature)
+        }
+        if (this.flyoutTextEnemy.width + this.flyoutTextPlayer.width > this.flyoutWidth * 6 - 120) {
+          this.flyoutTextPlayer.text = regionTag + poke[i].name + formtext
         }
         //console.log(this.flyoutTextEnemy.width + this.flyoutTextPlayer.width, this.flyoutWidth * 6 - 120)
         this.flyoutTextPlayer.text = beforeText1 + this.flyoutTextPlayer.text + "\n"
@@ -379,20 +423,20 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
       // Creates a proxy object to decide which text object needs to be updated
       let textObject: Phaser.GameObjects.Text;
       switch (fieldEffectInfo.effecType) {
-      case ArenaEffectType.PLAYER:
-        textObject = this.flyoutTextPlayer;
-        break;
+        case ArenaEffectType.PLAYER:
+          textObject = this.flyoutTextPlayer;
+          break;
 
-      case ArenaEffectType.WEATHER:
-      case ArenaEffectType.TERRAIN:
-      case ArenaEffectType.FIELD:
-        textObject = this.flyoutTextField;
+        case ArenaEffectType.WEATHER:
+        case ArenaEffectType.TERRAIN:
+        case ArenaEffectType.FIELD:
+          textObject = this.flyoutTextField;
 
-        break;
+          break;
 
-      case ArenaEffectType.ENEMY:
-        textObject = this.flyoutTextEnemy;
-        break;
+        case ArenaEffectType.ENEMY:
+          textObject = this.flyoutTextEnemy;
+          break;
       }
 
       textObject.text += fieldEffectInfo.name;
@@ -418,81 +462,81 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
 
     let foundIndex: number;
     switch (arenaEffectChangedEvent.constructor) {
-    case TagAddedEvent:
-      const tagAddedEvent = arenaEffectChangedEvent as TagAddedEvent;
-      const isArenaTrapTag = this.battleScene.arena.getTag(tagAddedEvent.arenaTagType) instanceof ArenaTrapTag;
-      let arenaEffectType: ArenaEffectType;
+      case TagAddedEvent:
+        const tagAddedEvent = arenaEffectChangedEvent as TagAddedEvent;
+        const isArenaTrapTag = this.battleScene.arena.getTag(tagAddedEvent.arenaTagType) instanceof ArenaTrapTag;
+        let arenaEffectType: ArenaEffectType;
 
-      if (tagAddedEvent.arenaTagSide === ArenaTagSide.BOTH) {
-        arenaEffectType = ArenaEffectType.FIELD;
-      } else if (tagAddedEvent.arenaTagSide === ArenaTagSide.PLAYER) {
-        arenaEffectType = ArenaEffectType.PLAYER;
-      } else {
-        arenaEffectType = ArenaEffectType.ENEMY;
-      }
-
-      const existingTrapTagIndex = isArenaTrapTag ? this.fieldEffectInfo.findIndex(e => tagAddedEvent.arenaTagType === e.tagType && arenaEffectType === e.effecType) : -1;
-      let name: string =  getFieldEffectText(ArenaTagType[tagAddedEvent.arenaTagType]);
-
-      if (isArenaTrapTag) {
-        if (existingTrapTagIndex !== -1) {
-          const layers = tagAddedEvent.arenaTagMaxLayers > 1 ? ` (${tagAddedEvent.arenaTagLayers})` : "";
-          this.fieldEffectInfo[existingTrapTagIndex].name = `${name}${layers}`;
-          break;
-        } else if (tagAddedEvent.arenaTagMaxLayers > 1) {
-          name = `${name} (${tagAddedEvent.arenaTagLayers})`;
+        if (tagAddedEvent.arenaTagSide === ArenaTagSide.BOTH) {
+          arenaEffectType = ArenaEffectType.FIELD;
+        } else if (tagAddedEvent.arenaTagSide === ArenaTagSide.PLAYER) {
+          arenaEffectType = ArenaEffectType.PLAYER;
+        } else {
+          arenaEffectType = ArenaEffectType.ENEMY;
         }
-      }
 
-      this.fieldEffectInfo.push({
-        name,
-        effecType: arenaEffectType,
-        maxDuration: tagAddedEvent.duration,
-        duration: tagAddedEvent.duration,
-        tagType: tagAddedEvent.arenaTagType
-      });
-      break;
-    case TagRemovedEvent:
-      const tagRemovedEvent = arenaEffectChangedEvent as TagRemovedEvent;
-      foundIndex = this.fieldEffectInfo.findIndex(info => info.tagType === tagRemovedEvent.arenaTagType);
+        const existingTrapTagIndex = isArenaTrapTag ? this.fieldEffectInfo.findIndex(e => tagAddedEvent.arenaTagType === e.tagType && arenaEffectType === e.effecType) : -1;
+        let name: string =  getFieldEffectText(ArenaTagType[tagAddedEvent.arenaTagType]);
 
-      if (foundIndex !== -1) { // If the tag was being tracked, remove it
-        this.fieldEffectInfo.splice(foundIndex, 1);
-      }
-      break;
+        if (isArenaTrapTag) {
+          if (existingTrapTagIndex !== -1) {
+            const layers = tagAddedEvent.arenaTagMaxLayers > 1 ? ` (${tagAddedEvent.arenaTagLayers})` : "";
+            this.fieldEffectInfo[existingTrapTagIndex].name = `${name}${layers}`;
+            break;
+          } else if (tagAddedEvent.arenaTagMaxLayers > 1) {
+            name = `${name} (${tagAddedEvent.arenaTagLayers})`;
+          }
+        }
 
-    case WeatherChangedEvent:
-    case TerrainChangedEvent:
-      const fieldEffectChangedEvent = arenaEffectChangedEvent as WeatherChangedEvent | TerrainChangedEvent;
+        this.fieldEffectInfo.push({
+          name,
+          effecType: arenaEffectType,
+          maxDuration: tagAddedEvent.duration,
+          duration: tagAddedEvent.duration,
+          tagType: tagAddedEvent.arenaTagType
+        });
+        break;
+      case TagRemovedEvent:
+        const tagRemovedEvent = arenaEffectChangedEvent as TagRemovedEvent;
+        foundIndex = this.fieldEffectInfo.findIndex(info => info.tagType === tagRemovedEvent.arenaTagType);
 
-      // Stores the old Weather/Terrain name in case it's in the array already
-      const oldName =
+        if (foundIndex !== -1) { // If the tag was being tracked, remove it
+          this.fieldEffectInfo.splice(foundIndex, 1);
+        }
+        break;
+
+      case WeatherChangedEvent:
+      case TerrainChangedEvent:
+        const fieldEffectChangedEvent = arenaEffectChangedEvent as WeatherChangedEvent | TerrainChangedEvent;
+
+        // Stores the old Weather/Terrain name in case it's in the array already
+        const oldName =
         getFieldEffectText(fieldEffectChangedEvent instanceof WeatherChangedEvent
           ? WeatherType[fieldEffectChangedEvent.oldWeatherType]
           : TerrainType[fieldEffectChangedEvent.oldTerrainType]);
-      // Stores the new Weather/Terrain info
-      const newInfo = {
-        name:
+        // Stores the new Weather/Terrain info
+        const newInfo = {
+          name:
           getFieldEffectText(fieldEffectChangedEvent instanceof WeatherChangedEvent
             ? WeatherType[fieldEffectChangedEvent.newWeatherType]
             : TerrainType[fieldEffectChangedEvent.newTerrainType]),
-        effecType: fieldEffectChangedEvent instanceof WeatherChangedEvent
-          ? ArenaEffectType.WEATHER
-          : ArenaEffectType.TERRAIN,
-        maxDuration: fieldEffectChangedEvent.duration,
-        duration: fieldEffectChangedEvent.duration};
+          effecType: fieldEffectChangedEvent instanceof WeatherChangedEvent
+            ? ArenaEffectType.WEATHER
+            : ArenaEffectType.TERRAIN,
+          maxDuration: fieldEffectChangedEvent.duration,
+          duration: fieldEffectChangedEvent.duration };
 
-      foundIndex = this.fieldEffectInfo.findIndex(info => [newInfo.name, oldName].includes(info.name));
-      if (foundIndex === -1) {
-        if (newInfo.name !== undefined) {
-          this.fieldEffectInfo.push(newInfo); // Adds the info to the array if it doesn't already exist and is defined
+        foundIndex = this.fieldEffectInfo.findIndex(info => [ newInfo.name, oldName ].includes(info.name));
+        if (foundIndex === -1) {
+          if (newInfo.name !== undefined) {
+            this.fieldEffectInfo.push(newInfo); // Adds the info to the array if it doesn't already exist and is defined
+          }
+        } else if (!newInfo.name) {
+          this.fieldEffectInfo.splice(foundIndex, 1); // Removes the old info if the new one is undefined
+        } else {
+          this.fieldEffectInfo[foundIndex] = newInfo; // Otherwise, replace the old info
         }
-      } else if (!newInfo.name) {
-        this.fieldEffectInfo.splice(foundIndex, 1); // Removes the old info if the new one is undefined
-      } else {
-        this.fieldEffectInfo[foundIndex] = newInfo; // Otherwise, replace the old info
-      }
-      break;
+        break;
     }
 
     this.updateFieldText();

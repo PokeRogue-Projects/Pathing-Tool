@@ -1,6 +1,6 @@
 import BattleScene from "#app/battle-scene";
 import { BattlerIndex } from "#app/battle";
-import { applyPostSummonAbAttrs, PostSummonAbAttr } from "#app/data/ability";
+import { applyAbAttrs, applyPostSummonAbAttrs, CommanderAbAttr, PostSummonAbAttr } from "#app/data/ability";
 import { ArenaTrapTag } from "#app/data/arena-tag";
 import { StatusEffect } from "#app/enums/status-effect";
 import { PokemonPhase } from "./pokemon-phase";
@@ -19,9 +19,9 @@ export class PostSummonPhase extends PokemonPhase {
     const pokemon = this.getPokemon();
 
     if (pokemon.status?.effect === StatusEffect.TOXIC) {
-      pokemon.status.turnCount = 0;
+      pokemon.status.toxicTurnCount = 0;
     }
-    this.scene.arena.applyTags(ArenaTrapTag, pokemon);
+    this.scene.arena.applyTags(ArenaTrapTag, false, pokemon);
 
     // If this is mystery encounter and has post summon phase tag, apply post summon effects
     if (this.scene.currentBattle.isBattleMysteryEncounter() && pokemon.findTags(t => t instanceof MysteryEncounterPostSummonTag).length > 0) {
@@ -29,5 +29,8 @@ export class PostSummonPhase extends PokemonPhase {
     }
 
     applyPostSummonAbAttrs(PostSummonAbAttr, pokemon).then(() => this.end());
+
+    const field = pokemon.isPlayer() ? this.scene.getPlayerField() : this.scene.getEnemyField();
+    field.forEach((p) => applyAbAttrs(CommanderAbAttr, p, null, false));
   }
 }

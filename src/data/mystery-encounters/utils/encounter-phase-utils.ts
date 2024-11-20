@@ -1,5 +1,5 @@
 import Battle, { BattlerIndex, BattleType } from "#app/battle";
-import { biomeLinks, BiomePoolTier } from "#app/data/biomes";
+import { biomeLinks, BiomePoolTier } from "#app/data/balance/biomes";
 import MysteryEncounterOption from "#app/data/mystery-encounters/mystery-encounter-option";
 import { AVERAGE_ENCOUNTERS_PER_RUN_TARGET, WEIGHT_INCREMENT_ON_SPAWN_MISS } from "#app/data/mystery-encounters/mystery-encounters";
 import { showEncounterText } from "#app/data/mystery-encounters/utils/encounter-dialogue-utils";
@@ -19,15 +19,15 @@ import i18next from "i18next";
 import BattleScene from "#app/battle-scene";
 import Trainer, { TrainerVariant } from "#app/field/trainer";
 import { Gender } from "#app/data/gender";
-import { Nature } from "#app/data/nature";
+import { Nature } from "#enums/nature";
 import { Moves } from "#enums/moves";
 import { initMoveAnim, loadMoveAnimAssets } from "#app/data/battle-anims";
 import { MysteryEncounterMode } from "#enums/mystery-encounter-mode";
-import { Status, StatusEffect } from "#app/data/status-effect";
+import { Status } from "#app/data/status-effect";
 import { TrainerConfig, trainerConfigs, TrainerSlot } from "#app/data/trainer-config";
 import PokemonSpecies from "#app/data/pokemon-species";
 import { Egg, IEggOptions } from "#app/data/egg";
-import { MysteryEncounterPokemonData } from "#app/data/mystery-encounters/mystery-encounter-pokemon-data";
+import { CustomPokemonData } from "#app/data/custom-pokemon-data";
 import HeldModifierConfig from "#app/interfaces/held-modifier-config";
 import { MovePhase } from "#app/phases/move-phase";
 import { EggLapsePhase } from "#app/phases/egg-lapse-phase";
@@ -37,6 +37,7 @@ import { GameOverPhase } from "#app/phases/game-over-phase";
 import { SelectModifierPhase } from "#app/phases/select-modifier-phase";
 import { PartyExpPhase } from "#app/phases/party-exp-phase";
 import { Variant } from "#app/data/variant";
+import { StatusEffect } from "#enums/status-effect";
 
 /**
  * Animates exclamation sprite over trainer's head at start of encounter
@@ -71,7 +72,7 @@ export interface EnemyPokemonConfig {
   nickname?: string;
   bossSegments?: number;
   bossSegmentModifier?: number; // Additive to the determined segment number
-  mysteryEncounterPokemonData?: MysteryEncounterPokemonData;
+  customPokemonData?: CustomPokemonData;
   formIndex?: number;
   abilityIndex?: number;
   level?: number;
@@ -145,7 +146,7 @@ export async function initBattleWithEnemyConfig(scene: BattleScene, partyConfig:
     newTrainer.setVisible(false);
     scene.field.add(newTrainer);
     scene.currentBattle.trainer = newTrainer;
-    loadEnemyAssets.push(newTrainer.loadAssets());
+    loadEnemyAssets.push(newTrainer.loadAssets().then(() => newTrainer.initSprite()));
 
     battle.enemyLevels = scene.currentBattle.trainer.getPartyLevels(scene.currentBattle.waveIndex);
   } else {
@@ -250,8 +251,8 @@ export async function initBattleWithEnemyConfig(scene: BattleScene, partyConfig:
       }
 
       // Set custom mystery encounter data fields (such as sprite scale, custom abilities, types, etc.)
-      if (!isNullOrUndefined(config.mysteryEncounterPokemonData)) {
-        enemyPokemon.mysteryEncounterPokemonData = config.mysteryEncounterPokemonData;
+      if (!isNullOrUndefined(config.customPokemonData)) {
+        enemyPokemon.customPokemonData = config.customPokemonData;
       }
 
       // Set Boss
@@ -373,7 +374,7 @@ export async function initBattleWithEnemyConfig(scene: BattleScene, partyConfig:
  * @param moves
  */
 export function loadCustomMovesForEncounter(scene: BattleScene, moves: Moves | Moves[]) {
-  moves = Array.isArray(moves) ? moves : [moves];
+  moves = Array.isArray(moves) ? moves : [ moves ];
   return Promise.all(moves.map(move => initMoveAnim(scene, move)))
     .then(() => loadMoveAnimAssets(scene, moves));
 }
@@ -418,9 +419,9 @@ export function generateModifierType(scene: BattleScene, modifier: () => Modifie
   // Populates item id and tier (order matters)
   result = result
     .withIdFromFunc(modifierTypes[modifierId])
-    .withTierFromPool();
+    .withTierFromPool(ModifierPoolType.PLAYER, scene.getPlayerParty());
 
-  return result instanceof ModifierTypeGenerator ? result.generateType(scene.getParty(), pregenArgs) : result;
+  return result instanceof ModifierTypeGenerator ? result.generateType(scene.getPlayerParty(), pregenArgs) : result;
 }
 
 /**
@@ -451,9 +452,9 @@ export function selectPokemonForOption(scene: BattleScene, onPokemonSelected: (p
 
     // Open party screen to choose pokemon
     scene.ui.setMode(Mode.PARTY, PartyUiMode.SELECT, -1, (slotIndex: number, option: PartyOption) => {
-      if (slotIndex < scene.getParty().length) {
+      if (slotIndex < scene.getPlayerParty().length) {
         scene.ui.setMode(modeToSetOnExit).then(() => {
-          const pokemon = scene.getParty()[slotIndex];
+          const pokemon = scene.getPlayerParty()[slotIndex];
           const secondaryOptions = onPokemonSelected(pokemon);
           if (!secondaryOptions) {
             scene.currentBattle.mysteryEncounter!.setDialogueToken("selectedPokemon", pokemon.getNameToRender());
@@ -563,7 +564,7 @@ export function selectOptionThenPokemon(scene: BattleScene, options: OptionSelec
     const selectPokemonAfterOption = (selectedOptionIndex: number) => {
       // Open party screen to choose a Pokemon
       scene.ui.setMode(Mode.PARTY, PartyUiMode.SELECT, -1, (slotIndex: number, option: PartyOption) => {
-        if (slotIndex < scene.getParty().length) {
+        if (slotIndex < scene.getPlayerParty().length) {
           // Pokemon and option selected
           scene.ui.setMode(modeToSetOnExit).then(() => {
             const result: PokemonAndOptionSelected = { selectedPokemonIndex: slotIndex, selectedOptionIndex: selectedOptionIndex };
@@ -663,7 +664,7 @@ export function setEncounterRewards(scene: BattleScene, customShopRewards?: Cust
  * @param useWaveIndex - set to false when directly passing the the full exp value instead of baseExpValue
  */
 export function setEncounterExp(scene: BattleScene, participantId: number | number[], baseExpValue: number, useWaveIndex: boolean = true) {
-  const participantIds = Array.isArray(participantId) ? participantId : [participantId];
+  const participantIds = Array.isArray(participantId) ? participantId : [ participantId ];
 
   scene.currentBattle.mysteryEncounter!.doEncounterExp = (scene: BattleScene) => {
     scene.unshiftPhase(new PartyExpPhase(scene, baseExpValue, useWaveIndex, new Set(participantIds)));
@@ -713,7 +714,7 @@ export function leaveEncounterWithoutBattle(scene: BattleScene, addHealPhase: bo
  * @param doNotContinue - default `false`. If set to true, will not end the battle and continue to next wave
  */
 export function handleMysteryEncounterVictory(scene: BattleScene, addHealPhase: boolean = false, doNotContinue: boolean = false) {
-  const allowedPkm = scene.getParty().filter((pkm) => pkm.isAllowedInBattle());
+  const allowedPkm = scene.getPlayerParty().filter((pkm) => pkm.isAllowedInBattle());
 
   if (allowedPkm.length === 0) {
     scene.clearPhaseQueue();
@@ -750,7 +751,7 @@ export function handleMysteryEncounterVictory(scene: BattleScene, addHealPhase: 
  * @param addHealPhase
  */
 export function handleMysteryEncounterBattleFailed(scene: BattleScene, addHealPhase: boolean = false, doNotContinue: boolean = false) {
-  const allowedPkm = scene.getParty().filter((pkm) => pkm.isAllowedInBattle());
+  const allowedPkm = scene.getPlayerParty().filter((pkm) => pkm.isAllowedInBattle());
 
   if (allowedPkm.length === 0) {
     scene.clearPhaseQueue();
@@ -800,8 +801,8 @@ export function transitionMysteryEncounterIntroVisuals(scene: BattleScene, hide:
 
       // Transition
       scene.tweens.add({
-        targets: [introVisuals, enemyPokemon],
-        x: `${hide? "+" : "-"}=16`,
+        targets: [ introVisuals, enemyPokemon ],
+        x: `${hide ? "+" : "-"}=16`,
         y: `${hide ? "-" : "+"}=16`,
         alpha: hide ? 0 : 1,
         ease: "Sine.easeInOut",
@@ -888,14 +889,14 @@ export function calculateMEAggregateStats(scene: BattleScene, baseSpawnWeight: n
   const numRuns = 1000;
   let run = 0;
   const biomes = Object.keys(Biome).filter(key => isNaN(Number(key)));
-  const alwaysPickTheseBiomes = [Biome.ISLAND, Biome.ABYSS, Biome.WASTELAND, Biome.FAIRY_CAVE, Biome.TEMPLE, Biome.LABORATORY, Biome.SPACE, Biome.WASTELAND];
+  const alwaysPickTheseBiomes = [ Biome.ISLAND, Biome.ABYSS, Biome.WASTELAND, Biome.FAIRY_CAVE, Biome.TEMPLE, Biome.LABORATORY, Biome.SPACE, Biome.WASTELAND ];
 
   const calculateNumEncounters = (): any[] => {
     let encounterRate = baseSpawnWeight; // BASE_MYSTERY_ENCOUNTER_SPAWN_WEIGHT
-    const numEncounters = [0, 0, 0, 0];
+    const numEncounters = [ 0, 0, 0, 0 ];
     let mostRecentEncounterWave = 0;
-    const encountersByBiome = new Map<string, number>(biomes.map(b => [b, 0]));
-    const validMEfloorsByBiome = new Map<string, number>(biomes.map(b => [b, 0]));
+    const encountersByBiome = new Map<string, number>(biomes.map(b => [ b, 0 ]));
+    const validMEfloorsByBiome = new Map<string, number>(biomes.map(b => [ b, 0 ]));
     let currentBiome = Biome.TOWN;
     let currentArena = scene.newArena(currentBiome);
     scene.setSeed(Utils.randomString(24));
@@ -968,7 +969,7 @@ export function calculateMEAggregateStats(scene: BattleScene, baseSpawnWeight: n
 
         // Calculate encounter rarity
         // Common / Uncommon / Rare / Super Rare (base is out of 128)
-        const tierWeights = [66, 40, 19, 3];
+        const tierWeights = [ 66, 40, 19, 3 ];
 
         // Adjust tier weights by currently encountered events (pity system that lowers odds of multiple Common/Great)
         tierWeights[0] = tierWeights[0] - 6 * numEncounters[0];
@@ -987,7 +988,7 @@ export function calculateMEAggregateStats(scene: BattleScene, baseSpawnWeight: n
       }
     }
 
-    return [numEncounters, encountersByBiome, validMEfloorsByBiome];
+    return [ numEncounters, encountersByBiome, validMEfloorsByBiome ];
   };
 
   const encounterRuns: number[][] = [];
@@ -995,7 +996,7 @@ export function calculateMEAggregateStats(scene: BattleScene, baseSpawnWeight: n
   const validFloorsByBiome: Map<string, number>[] = [];
   while (run < numRuns) {
     scene.executeWithSeedOffset(() => {
-      const [numEncounters, encountersByBiome, validMEfloorsByBiome] = calculateNumEncounters();
+      const [ numEncounters, encountersByBiome, validMEfloorsByBiome ] = calculateNumEncounters();
       encounterRuns.push(numEncounters);
       encountersByBiomeRuns.push(encountersByBiome);
       validFloorsByBiome.push(validMEfloorsByBiome);
@@ -1036,7 +1037,7 @@ export function calculateMEAggregateStats(scene: BattleScene, baseSpawnWeight: n
 
   let stats = `Starting weight: ${baseSpawnWeight}\nAverage MEs per run: ${totalMean}\nStandard Deviation: ${totalStd}\nAvg Commons: ${commonMean}\nAvg Greats: ${uncommonMean}\nAvg Ultras: ${rareMean}\nAvg Rogues: ${superRareMean}\n`;
 
-  const meanEncountersPerRunPerBiomeSorted = [...meanEncountersPerRunPerBiome.entries()].sort((e1, e2) => e2[1] - e1[1]);
+  const meanEncountersPerRunPerBiomeSorted = [ ...meanEncountersPerRunPerBiome.entries() ].sort((e1, e2) => e2[1] - e1[1]);
   meanEncountersPerRunPerBiomeSorted.forEach(value => stats = stats + `${value[0]}: avg valid floors ${meanMEFloorsPerRunPerBiome.get(value[0])}, avg MEs ${value[1]},\n`);
 
   console.log(stats);
@@ -1054,7 +1055,7 @@ export function calculateRareSpawnAggregateStats(scene: BattleScene, luckValue: 
   let run = 0;
 
   const calculateNumRareEncounters = (): any[] => {
-    const bossEncountersByRarity = [0, 0, 0, 0];
+    const bossEncountersByRarity = [ 0, 0, 0, 0 ];
     scene.setSeed(Utils.randomString(24));
     scene.resetSeed();
     // There are 12 wild boss floors
@@ -1069,19 +1070,19 @@ export function calculateRareSpawnAggregateStats(scene: BattleScene, luckValue: 
       const tier = tierValue >= 20 ? BiomePoolTier.BOSS : tierValue >= 6 ? BiomePoolTier.BOSS_RARE : tierValue >= 1 ? BiomePoolTier.BOSS_SUPER_RARE : BiomePoolTier.BOSS_ULTRA_RARE;
 
       switch (tier) {
-      default:
-      case BiomePoolTier.BOSS:
-        ++bossEncountersByRarity[0];
-        break;
-      case BiomePoolTier.BOSS_RARE:
-        ++bossEncountersByRarity[1];
-        break;
-      case BiomePoolTier.BOSS_SUPER_RARE:
-        ++bossEncountersByRarity[2];
-        break;
-      case BiomePoolTier.BOSS_ULTRA_RARE:
-        ++bossEncountersByRarity[3];
-        break;
+        default:
+        case BiomePoolTier.BOSS:
+          ++bossEncountersByRarity[0];
+          break;
+        case BiomePoolTier.BOSS_RARE:
+          ++bossEncountersByRarity[1];
+          break;
+        case BiomePoolTier.BOSS_SUPER_RARE:
+          ++bossEncountersByRarity[2];
+          break;
+        case BiomePoolTier.BOSS_ULTRA_RARE:
+          ++bossEncountersByRarity[3];
+          break;
       }
     }
 

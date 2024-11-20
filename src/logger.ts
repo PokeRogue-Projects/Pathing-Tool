@@ -3,19 +3,18 @@ import i18next from "i18next";
 import * as Utils from "./utils";
 import Pokemon from "./field/pokemon";
 import { PlayerPokemon, EnemyPokemon } from "./field/pokemon";
-import { Nature, getNatureDecrease, getNatureIncrease, getNatureName } from "./data/nature";
+import { getNatureDecrease, getNatureIncrease, getNatureName } from "./data/nature";
 import BattleScene from "./battle-scene";
 import { OptionSelectItem } from "./ui/abstact-option-select-ui-handler";
 import { BypassSpeedChanceModifier, EnemyAttackStatusEffectChanceModifier, ExtraModifierModifier, PokemonHeldItemModifier } from "./modifier/modifier";
-import { getBiomeName, PokemonPools, SpeciesTree } from "./data/biomes";
 import { Mode } from "./ui/ui";
 import { TitlePhase } from "./phases/title-phase";
 import Trainer from "./field/trainer";
 import { Species } from "./enums/species";
-import { GameMode, GameModes } from "./game-mode";
+import { GameModes } from "./game-mode";
 import PersistentModifierData from "./system/modifier-data";
-import PokemonSpecies, { getPokemonSpecies, starterPassiveAbilities } from "./data/pokemon-species";
-import { getStatusEffectCatchRateMultiplier, StatusEffect } from "./data/status-effect";
+import { getPokemonSpecies } from "./data/pokemon-species";
+import { getStatusEffectCatchRateMultiplier } from "./data/status-effect";
 import { decrypt, SessionSaveData } from "./system/game-data";
 import { loggedInUser } from "./account";
 import PokemonData from "./system/pokemon-data";
@@ -24,9 +23,10 @@ import ArenaData from "./system/arena-data";
 import ChallengeData from "./system/challenge-data";
 import { Challenges } from "./enums/challenges";
 import { getPlayerModifierTypeOptions, ModifierPoolType, ModifierTypeOption, regenerateModifierPoolThresholds } from "./modifier/modifier-type";
-import { Ability, allAbilities } from "./data/ability";
-import { pokemonPrevolutions } from "./data/pokemon-evolutions";
 import { Abilities } from "./enums/abilities";
+import { getBiomeName } from "./data/balance/biomes";
+import { Nature } from "./enums/nature";
+import { StatusEffect } from "./enums/status-effect";
 
 /*
 SECTIONS
@@ -74,13 +74,13 @@ export const acceptedVersions = [
 /** Holds the encounter rarities for the Pokemon in this wave. */
 export const rarities = []
 /** Used to store rarity tier between files when calculating and storing a Pokemon's encounter rarity.
- * 
+ *
  * The second index is (very lazily) used to store a log's name/seed for `setFileInfo`.
  * @see setFileInfo
  */
 export const rarityslot = [0, ""]
 /** Stores a list of the user's battle actions in a turn.
- * 
+ *
  * Its contents are printed to the current wave's actions list, separated by pipes `|`, when the turn begins playing out. */
 export const Actions: string[] = []
 /** Used for enemy attack prediction. Stored here so that it's universally available. */
@@ -148,7 +148,7 @@ export function downloadLogByIDToSheet(i: integer) {
 /**
  * Stores logs.
  * Generate a new list with `getLogs()`.
- * 
+ *
  * @see getLogs
  */
 export const logs: string[][] = [
@@ -171,7 +171,7 @@ export function getLogID(scene: BattleScene) {
 }
 /**
  * Gets a log's item list storage, for detecting reloads via a change in the loot rewards.
- * 
+ *
  * Not used yet.
  * @param scene The BattleScene.
  * @returns The ID of the current save's log.
@@ -181,7 +181,7 @@ export function getItemsID(scene: BattleScene) {
 }
 /**
  * Resets the `logs` array, and creates a list of all game logs in LocalStorage.
- * 
+ *
  * @see logs
  */
 export function getLogs() {
@@ -271,7 +271,7 @@ export function getMode(scene: BattleScene) {
 
 /**
  * Pulls the current run's DRPD from LocalStorage using the run's RNG seed.
- * 
+ *
  * When loaded, the file is automatically updated and assigned a seed
  * @param scene The BattleScene. Used to get the wave number, which is what determines the name of the log we need.
  * @returns The DRPD file, or `null` if there is no file for this run.
@@ -316,15 +316,15 @@ export const autoCheckpoints: integer[] = [
 export const byteSize = str => new Blob([str]).size
 /**
  * Contains names for different file size units.
- * 
+ *
  * B: 1 byte
- * 
+ *
  * KB: 1,000 bytes
- * 
+ *
  * MB: 1,000,000 bytes
- * 
+ *
  * GB: 1,000,000,000 bytes
- * 
+ *
  * TB: 1,000,000,000,000 bytes
  */
 const filesizes = ["b", "kb", "mb", "gb", "tb"]
@@ -345,32 +345,8 @@ export function getSize(str: string) {
 }
 
 /**
- * Compares a Species to a biome's tier pool.
- * @param species The species to search for.
- * @param pool The SpeciesPool tier to compare.
- * @returns whether or not `species` was found in the `pool`.
- */
-function checkForPokeInBiome(species: Species, pool: (Species | SpeciesTree)[]): boolean {
-  //console.log(species, pool)
-  for (var i = 0; i < pool.length; i++) {
-    if (typeof pool[i] === "number") {
-      //console.log(pool[i] + " == " + species + "? " + (pool[i] == species))
-      if (pool[i] == species) return true;
-    } else {
-      var k = Object.keys(pool[i])
-      //console.log(pool[i], k)
-      for (var j = 0; j < k.length; j++) {
-        //console.log(pool[i][k[j]] + " == " + species + "? " + (pool[i][k[j]] == species))
-        if (pool[i][k[j]] == species) return true;
-      }
-    }
-  }
-  return false;
-}
-
-/**
  * Formats a Pokemon in the player's party.
- * 
+ *
  * If multiple Pokemon of the same species exist in the party, it will specify which slot they are in.
  * @param scene The BattleScene, for getting the player's party.
  * @param index The slot index.
@@ -379,30 +355,30 @@ function checkForPokeInBiome(species: Species, pool: (Species | SpeciesTree)[]):
 export function playerPokeName(scene: BattleScene, index: integer | Pokemon | PlayerPokemon) {
   var species: string[] = []
   var dupeSpecies: string[] = []
-  for (var i = 0; i < scene.getParty().length; i++) {
-    if (!species.includes(scene.getParty()[i].name)) {
-      species.push(scene.getParty()[i].name)
-    } else if (!dupeSpecies.includes(scene.getParty()[i].name)) {
-      dupeSpecies.push(scene.getParty()[i].name)
+  for (var i = 0; i < scene.getPlayerParty().length; i++) {
+    if (!species.includes(scene.getPlayerParty()[i].name)) {
+      species.push(scene.getPlayerParty()[i].name)
+    } else if (!dupeSpecies.includes(scene.getPlayerParty()[i].name)) {
+      dupeSpecies.push(scene.getPlayerParty()[i].name)
     }
   }
   if (typeof index == "number") {
     //console.log(scene.getParty()[index], species, dupeSpecies)
-    if (dupeSpecies.includes(scene.getParty()[index].name))
-      return scene.getParty()[index].name + " (Slot " + (index  + 1) + ")"
-    return scene.getParty()[index].name
+    if (dupeSpecies.includes(scene.getPlayerParty()[index].name))
+      return scene.getPlayerParty()[index].name + " (Slot " + (index  + 1) + ")"
+    return scene.getPlayerParty()[index].name
   }
   if (!index.isPlayer()) {
     return "[Not a player Pokemon??]"
   }
   //console.log(index.name, species, dupeSpecies)
   if (dupeSpecies.includes(index.name))
-    return index.name + " (Slot " + (scene.getParty().indexOf(index as PlayerPokemon) + 1) + ")"
+    return index.name + " (Slot " + (scene.getPlayerParty().indexOf(index as PlayerPokemon) + 1) + ")"
   return index.name
 }
 /**
  * Formats a Pokemon in the opposing party.
- * 
+ *
  * If multiple Pokemon of the same species exist in the party, it will specify which slot they are in.
  * @param scene The BattleScene, for getting the enemy's party.
  * @param index The slot index.
@@ -461,11 +437,11 @@ export interface DRPD {
   date: string,
   /**
    * A list of all the waves in this Daily Run.
-   * 
+   *
    * A completed Daily Run will have 50 waves.
-   * 
+   *
    * This array automatically sorts by wave number, with blank slots being pushed to the bottom.
-   * 
+   *
    * @see Wave
    */
   waves: Wave[],
@@ -514,7 +490,7 @@ export function newDocument(name: string = "Untitled Run", authorName: string | 
  * @param indent The indent string (just a bunch of spaces).
  * @param drpd The `DRPD` to export.
  * @returns `inData`, with all the DRPD's data appended to it.
- * 
+ *
  * @see downloadLogByID
  */
 export function printDRPD(inData: string, indent: string, drpd: DRPD): string {
@@ -568,7 +544,7 @@ export function printDRPD(inData: string, indent: string, drpd: DRPD): string {
 
 /**
  * Updates a DRPD, checkings its version and making any necessary changes to it in order to keep it up to date.
- * 
+ *
  * @param drpd The DRPD document to update. Its version will be read automatically.
  * @see DRPD
  */
@@ -646,11 +622,11 @@ export interface Wave {
   reload: boolean,
   /**
    * The specific type of wave.
-   * 
+   *
    * `wild`: This is a wild encounter.
-   * 
+   *
    * `trainer`: This is a trainer battle.
-   * 
+   *
    * `boss`: This is a boss floor (floors 10, 20, 30, etc). Overrides the two values above.
    */
   type: "wild" | "trainer" | "boss",
@@ -737,7 +713,7 @@ export function exportWave(scene: BattleScene): Wave {
  * @param indent The indent string (just a bunch of spaces).
  * @param wave The `Wave` to export.
  * @returns `inData`, with all the wave's data appended to it.
- * 
+ *
  * @see printDRPD
  */
 function printWave(inData: string, indent: string, wave: Wave): string {
@@ -1009,7 +985,7 @@ export function getWave(drpd: DRPD, floor: integer, scene: BattleScene): Wave {
 // #region 07 Pokémon
 /**
  * Stores information about a Pokémon.
- * 
+ *
  * This data type is used in `DRPD.starters` to list the player's starting Pokémon, or in `Wave.pokemon` to list the opponent(s) in a wild encounter.
  */
 export interface PokeData {
@@ -1107,7 +1083,7 @@ export function exportPokemonFromData(pokemon: PokemonData, encounterRarity?: st
  * @param indent The indent string (just a bunch of spaces).
  * @param wave The `PokeData` to export.
  * @returns `inData`, with all the Pokemon's data appended to it.
- * 
+ *
  * @see printDRPD
  */
 function printPoke(inData: string, indent: string, pokemon: PokeData) {
@@ -1225,7 +1201,7 @@ export function exportNature(nature: Nature): NatureData {
  * @param indent The indent string (just a bunch of spaces).
  * @param wave The `NatureData` to export.
  * @returns `inData`, with all the nature data appended to it.
- * 
+ *
  * @see printDRPD
  */
 function printNature(inData: string, indent: string, nature: NatureData) {
@@ -1291,7 +1267,7 @@ export function formatIVs(ivs: integer[] | IVData): string[] {
  * @param indent The indent string (just a bunch of spaces).
  * @param wave The `IVData` to export.
  * @returns `inData`, with the IV data appended to it.
- * 
+ *
  * @see printDRPD
  */
 function printIV(inData: string, indent: string, iv: IVData) {
@@ -1315,7 +1291,7 @@ function printIV(inData: string, indent: string, iv: IVData) {
 /**
  * A Trainer that the player has to battle against.
  * A Trainer will have 1-6 Pokémon in their party, depending on their difficulty.
- * 
+ *
  * If the wave has a Trainer, their party is not logged, and `Wave.pokemon` is left empty.
  */
 export interface LogTrainerData {
@@ -1346,7 +1322,7 @@ export function exportTrainer(trainer: Trainer): LogTrainerData {
  * @param indent The indent string (just a bunch of spaces).
  * @param wave The `LogTrainerData` to export.
  * @returns `inData`, with all the Trainer's data appended to it.
- * 
+ *
  * @see printDRPD
  */
 function printTrainer(inData: string, indent: string, trainer: LogTrainerData) {
@@ -1367,7 +1343,7 @@ function printTrainer(inData: string, indent: string, trainer: LogTrainerData) {
 /** An item held by a Pokémon. Quantities and ownership are recorded at the start of the battle, and do not reflect items being used up or stolen. */
 export interface ItemData {
   /** A type:key pair identifying the specific item.
-   * 
+   *
    * Example: `FormChange:TOXIC_PLATE`
    */
   id: string,
@@ -1394,7 +1370,7 @@ export function exportItem(item: PokemonHeldItemModifier): ItemData {
  * @param indent The indent string (just a bunch of spaces).
  * @param wave The `ItemData` to export.
  * @returns `inData`, with all the Item's data appended to it.
- * 
+ *
  * @see printDRPD
  */
 function printItem(inData: string, indent: string, item: ItemData) {
@@ -1411,7 +1387,7 @@ function printItem(inData: string, indent: string, item: ItemData) {
  * @param indent The indent string (just a bunch of spaces).
  * @param wave The `ItemData` to export.
  * @returns `inData`, with all the Item's data appended to it.
- * 
+ *
  * @see `downloadLogByIDToSheet`
  */
 function printItemNoNewline(inData: string, indent: string, item: ItemData) {
@@ -1654,12 +1630,12 @@ export function generateEditHandlerForLog(scene: BattleScene, i: integer, callba
 
 /**
  * Logs the actions that the player took.
- * 
+ *
  * This includes attacks you perform, items you transfer during the shop, Poke Balls you throw, running from battl, (or attempting to), and switching (including pre-switches).
  * @param scene The BattleScene. Used to get the log ID.
  * @param floor The wave index to write to. Defaults to the current floor.
  * @param action The text you want to add to the actions list.
- * 
+ *
  * @see resetWaveActions
  */
 export function logActions(scene: BattleScene, floor: integer = scene.currentBattle.waveIndex, action: string) {
@@ -1682,7 +1658,7 @@ export function logActions(scene: BattleScene, floor: integer = scene.currentBat
  * @param scene The BattleScene. Used to get the log ID.
  * @param floor The wave index to write to. Defaults to the current floor.
  * @param action The text you want to add to the actions list.
- * 
+ *
  * @see resetWaveActions
  */
 export function appendAction(scene: BattleScene, floor: integer = scene.currentBattle.waveIndex, action: string) {
@@ -1702,12 +1678,12 @@ export function appendAction(scene: BattleScene, floor: integer = scene.currentB
 }
 /**
  * Logs the actions that the player took.
- * 
+ *
  * This includes attacks you perform, items you transfer during the shop, Poke Balls you throw, running from battl, (or attempting to), and switching (including pre-switches).
  * @param scene The BattleScene. Used to get the log ID.
  * @param floor The wave index to write to.
  * @param action The text you want to add to the actions list.
- * 
+ *
  * @see resetWaveActions
  */
 export function getActionCount(scene: BattleScene, floor: integer) {
@@ -1745,14 +1721,14 @@ export function logCapture(scene: BattleScene, floor: integer = scene.currentBat
 }
 /**
  * Logs the player's current party.
- * 
+ *
  * Called on Floor 1 to store the starters list.
  * @param scene  The BattleScene. Used to get the log ID and the player's party.
  */
 export function logPlayerTeam(scene: BattleScene) {
   var drpd = getDRPD(scene)
-  console.log(`Logging player starters: ${scene.getParty().map(p => p.name).join(", ")}`)
-  var P = scene.getParty()
+  console.log(`Logging player starters: ${scene.getPlayerParty().map(p => p.name).join(", ")}`)
+  var P = scene.getPlayerParty()
   for (var i = 0; i < P.length; i++) {
     drpd.starters![i] = exportPokemon(P[i])
   }
@@ -1796,55 +1772,9 @@ export function logPokemon(scene: BattleScene, floor: integer = scene.currentBat
   if (wv.pokemon == undefined)
     wv.pokemon = []
   if (wv.pokemon[slot] != undefined) {
-    if (encounterRarity == "" || encounterRarity == undefined) {
-      if (wv.pokemon[slot].rarity != undefined && wv.pokemon[slot].rarity != "???") pk.rarity = wv.pokemon[slot].rarity
-      else {
-        var biome = scene.arena.biomeType
-        console.log(scene.arena.pokemonPool)
-        var tiernames = [
-          "Common",
-          "Uncommon",
-          "Rare",
-          "Super Rare",
-          "Ultra Rare",
-          "Common Boss",
-          "Rare Boss",
-          "Super Rare Boss",
-          "Ultra Rare Boss",
-        ]
-        for (var i = 0; i < tiernames.length; i++) {
-          if (checkForPokeInBiome(wv.pokemon[slot].id, scene.arena.pokemonPool[i]) == true) {
-            console.log("Autofilled rarity for " + pk.name + " as " + tiernames[i])
-            pk.rarity = tiernames[i]
-          }
-        }
-      }
-    }
     if (JSON.stringify(wv.pokemon[slot]) != JSON.stringify(pk)) {
       console.log("A different Pokemon already exists in this slot! Flagging as a reload")
       wv.reload = true
-    }
-  }
-  if (pk.rarity == undefined) {
-    var biome = scene.arena.biomeType
-    console.log(scene.arena.pokemonPool)
-    var tiernames = [
-      "Common",
-      "Uncommon",
-      "Rare",
-      "Super Rare",
-      "Ultra Rare",
-      "Common Boss",
-      "Rare Boss",
-      "Super Rare Boss",
-      "Ultra Rare Boss",
-    ]
-    for (var i = 0; i < tiernames.length; i++) {
-      if (wv.pokemon[slot] != undefined)
-      if (checkForPokeInBiome(wv.pokemon[slot].id, scene.arena.pokemonPool[i]) == true) {
-        console.log("Autofilled rarity for " + pk.name + " as " + tiernames[i])
-        pk.rarity = tiernames[i]
-      }
     }
   }
   if (pk.rarity == undefined)
@@ -1939,7 +1869,7 @@ export function flagResetIfExists(scene: BattleScene, floor: integer = scene.cur
  * @param scene The BattleScene. Used to get the log ID and trainer data.
  * @param floor The wave index to write to. Defaults to the current floor.
  * @param softflag Rather than deleting everything right away, the actions will be cleared the next time we attempt to log an action.
- * 
+ *
  * @see logActions
  */
 export function resetWaveActions(scene: BattleScene, floor: integer = scene.currentBattle.waveIndex, softflag: boolean) {
@@ -1970,16 +1900,16 @@ export const tierNames = [
 ]
 /**
  * This function rolls for modifiers with a certain luck value, checking to see if shiny luck would affect your results.
- * @param scene 
- * @param predictionCost 
- * @param rerollOverride 
- * @param modifierOverride 
- * @returns 
+ * @param scene
+ * @param predictionCost
+ * @param rerollOverride
+ * @param modifierOverride
+ * @returns
  */
 export function shinyCheckStep(scene: BattleScene, predictionCost: Utils.IntegerHolder, rerollOverride: integer, modifierOverride?: integer) {
   var minLuck = -1
   var modifierPredictions: ModifierTypeOption[][] = []
-  const party = scene.getParty();
+  const party = scene.getPlayerParty();
   regenerateModifierPoolThresholds(party, ModifierPoolType.PLAYER, rerollOverride);
   const modifierCount = new Utils.IntegerHolder(3);
   scene.applyModifiers(ExtraModifierModifier, true, modifierCount);
@@ -1987,7 +1917,7 @@ export function shinyCheckStep(scene: BattleScene, predictionCost: Utils.Integer
     //modifierCount.value = modifierOverride
   }
   var isOk = true;
-  const typeOptions: ModifierTypeOption[] = getPlayerModifierTypeOptions(modifierCount.value, scene.getParty(), undefined, scene, true, true);
+  const typeOptions: ModifierTypeOption[] = getPlayerModifierTypeOptions(modifierCount.value, scene.getPlayerParty());
   typeOptions.forEach((option, idx) => {
     let lastTier = option.type!.tier
     if (option.alternates && option.alternates.length > 0) {
@@ -2109,7 +2039,9 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
   if (scene.pokeballCounts[2] == 0 && !override) rates[2] = 0
   if (scene.pokeballCounts[3] == 0 && !override) rates[3] = 0
   var rates2 = rates.slice()
-  rates2.sort(function(a, b) {return b - a})
+  rates2.sort(function(a, b) {
+return b - a
+})
   const ballNames = [
     "Poké Ball",
     "Great Ball",

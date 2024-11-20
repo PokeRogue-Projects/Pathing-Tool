@@ -1,6 +1,7 @@
 import BattleScene, { InfoToggle } from "../battle-scene";
 import { addTextObject, TextStyle } from "./text";
-import { getTypeDamageMultiplierColor, Type } from "../data/type";
+import { getTypeDamageMultiplierColor } from "#app/data/type";
+import { Type } from "#enums/type";
 import { Command } from "./command-ui-handler";
 import { Mode } from "./ui";
 import UiHandler from "./ui-handler";
@@ -8,7 +9,7 @@ import * as Utils from "../utils";
 import * as MoveData from "#app/data/move";
 import i18next from "i18next";
 import {Button} from "#enums/buttons";
-import Pokemon, { AttackData, EnemyPokemon, PlayerPokemon, PokemonMove } from "#app/field/pokemon";
+import Pokemon, { EnemyPokemon, PlayerPokemon, PokemonMove } from "#app/field/pokemon";
 import { CommandPhase } from "#app/phases/command-phase";
 import { PokemonMultiHitModifierType } from "#app/modifier/modifier-type";
 import { StatusEffect } from "#app/enums/status-effect";
@@ -154,26 +155,26 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
       }
     } else {
       switch (button) {
-      case Button.UP:
-        if (cursor >= 2) {
-          success = this.setCursor(cursor - 2);
-        }
-        break;
-      case Button.DOWN:
-        if (cursor < 2) {
-          success = this.setCursor(cursor + 2);
-        }
-        break;
-      case Button.LEFT:
-        if (cursor % 2 === 1) {
-          success = this.setCursor(cursor - 1);
-        }
-        break;
-      case Button.RIGHT:
-        if (cursor % 2 === 0) {
-          success = this.setCursor(cursor + 1);
-        }
-        break;
+        case Button.UP:
+          if (cursor >= 2) {
+            success = this.setCursor(cursor - 2);
+          }
+          break;
+        case Button.DOWN:
+          if (cursor < 2) {
+            success = this.setCursor(cursor + 2);
+          }
+          break;
+        case Button.LEFT:
+          if (cursor % 2 === 1) {
+            success = this.setCursor(cursor - 1);
+          }
+          break;
+        case Button.RIGHT:
+          if (cursor % 2 === 0) {
+            success = this.setCursor(cursor + 1);
+          }
+          break;
       }
     }
 
@@ -190,7 +191,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
       this.cursorObj?.setVisible(false);
     }
     this.scene.tweens.add({
-      targets: [this.movesContainer, this.cursorObj],
+      targets: [ this.movesContainer, this.cursorObj ],
       duration: Utils.fixedInt(125),
       ease: "Sine.easeInOut",
       alpha: visible ? 0 : 1
@@ -290,11 +291,11 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
   /**
    * Gets multiplier text for a pokemon's move against a specific opponent.
    * Returns undefined if it's a status move.
-   * 
+   *
    * If Type Hints is enabled, shows the move's type effectiveness.
-   * 
+   *
    * If Damage Calculation is enabled, shows the move's expected damage range.
-   * 
+   *
    * If Type Hints and Damage Calculation are both off, the type effectiveness multiplier is hidden.
    */
   private getEffectivenessText(pokemon: Pokemon, opponent: Pokemon, pokemonMove: PokemonMove): string | undefined {
@@ -392,17 +393,20 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
     if (move.getMove().category == MoveData.MoveCategory.STATUS) {
       return ""; // Don't give a damage estimate for status moves
     }
-    var crit = target.tryCriticalHit(user, move.getMove(), true)
-    var out = target.getAttackDamage(user, move.getMove(), false, false, crit, true)
+    //return "";
+    var crit = {
+      canCrit: target.canBeCrit(),
+      alwaysCrit: target.isGuaranteedCrit(user, move.getMove(), true)
+    }
     //console.log(out)
-    var dmgHigh = out.damageHigh
-    var dmgLow = out.damageLow
+    var dmgHigh = target.getAttackDamage(user, move.getMove(), false, false, target.canBeCrit(), true).damage
+    var dmgLow = target.getAttackDamage(user, move.getMove(), false, false, target.isGuaranteedCrit(user, move.getMove(), true), true).damage
     var minHits = 1
     var maxHits = -1 // If nothing changes this value, it is set to minHits
     var mh = move.getMove().getAttrs(MoveData.MultiHitAttr)
     for (var i = 0; i < mh.length; i++) {
       var mh2 = mh[i] as MoveData.MultiHitAttr
-      switch (mh2.multiHitType) {
+      switch (mh2.getMultiHitType()) {
         case MoveData.MultiHitType._2:
           minHits = 2;
         case MoveData.MultiHitType._2_TO_5:
@@ -413,7 +417,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
         case MoveData.MultiHitType._10:
           minHits = 10;
         case MoveData.MultiHitType.BEAT_UP:
-          const party = user.isPlayer() ? user.scene.getParty() : user.scene.getEnemyParty();
+          const party = user.isPlayer() ? user.scene.getPlayerParty() : user.scene.getEnemyParty();
           // No status means the ally pokemon can contribute to Beat Up
           minHits = party.reduce((total, pokemon) => {
             return total + (pokemon.id === user.id ? 1 : pokemon?.status && pokemon.status.effect !== StatusEffect.NONE ? 0 : 1);

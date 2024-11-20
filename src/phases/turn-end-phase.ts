@@ -20,7 +20,7 @@ export class TurnEndPhase extends FieldPhase {
   start() {
     super.start();
 
-    this.scene.arenaFlyout.updateFieldText()
+    this.scene.arenaFlyout.updateFieldText();
 
     this.scene.currentBattle.incrementTurn(this.scene);
     this.scene.eventTarget.dispatchEvent(new TurnEndEvent(this.scene.currentBattle.turn));
@@ -47,6 +47,7 @@ export class TurnEndPhase extends FieldPhase {
       this.scene.applyModifiers(TurnHeldItemTransferModifier, pokemon.isPlayer(), pokemon);
 
       pokemon.battleSummonData.turnCount++;
+      pokemon.battleSummonData.waveTurnCount++;
     };
 
     this.executeForAll(handlePokemon);

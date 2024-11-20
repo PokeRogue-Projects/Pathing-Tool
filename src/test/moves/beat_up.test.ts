@@ -27,17 +27,17 @@ describe("Moves - Beat Up", () => {
 
     game.override.enemySpecies(Species.SNORLAX);
     game.override.enemyLevel(100);
-    game.override.enemyMoveset([Moves.SPLASH]);
+    game.override.enemyMoveset([ Moves.SPLASH ]);
     game.override.enemyAbility(Abilities.INSOMNIA);
 
     game.override.startingLevel(100);
-    game.override.moveset([Moves.BEAT_UP]);
+    game.override.moveset([ Moves.BEAT_UP ]);
   });
 
   it(
     "should hit once for each healthy player Pokemon",
     async () => {
-      await game.startBattle([Species.MAGIKARP, Species.BULBASAUR, Species.CHARMANDER, Species.SQUIRTLE, Species.PIKACHU, Species.EEVEE]);
+      await game.startBattle([ Species.MAGIKARP, Species.BULBASAUR, Species.CHARMANDER, Species.SQUIRTLE, Species.PIKACHU, Species.EEVEE ]);
 
       const playerPokemon = game.scene.getPlayerPokemon()!;
       const enemyPokemon = game.scene.getEnemyPokemon()!;
@@ -61,42 +61,17 @@ describe("Moves - Beat Up", () => {
   it(
     "should not count player Pokemon with status effects towards hit count",
     async () => {
-      await game.startBattle([Species.MAGIKARP, Species.BULBASAUR, Species.CHARMANDER, Species.SQUIRTLE, Species.PIKACHU, Species.EEVEE]);
+      await game.startBattle([ Species.MAGIKARP, Species.BULBASAUR, Species.CHARMANDER, Species.SQUIRTLE, Species.PIKACHU, Species.EEVEE ]);
 
       const playerPokemon = game.scene.getPlayerPokemon()!;
 
-      game.scene.getParty()[1].trySetStatus(StatusEffect.BURN);
+      game.scene.getPlayerParty()[1].trySetStatus(StatusEffect.BURN);
 
       game.move.select(Moves.BEAT_UP);
 
       await game.phaseInterceptor.to(MoveEffectPhase);
 
       expect(playerPokemon.turnData.hitCount).toBe(5);
-    }
-  );
-
-  it(
-    "should hit twice for each player Pokemon if the user has Multi-Lens",
-    async () => {
-      game.override.startingHeldItems([{ name: "MULTI_LENS", count: 1 }]);
-      await game.startBattle([Species.MAGIKARP, Species.BULBASAUR, Species.CHARMANDER, Species.SQUIRTLE, Species.PIKACHU, Species.EEVEE]);
-
-      const playerPokemon = game.scene.getPlayerPokemon()!;
-      const enemyPokemon = game.scene.getEnemyPokemon()!;
-      let enemyStartingHp = enemyPokemon.hp;
-
-      game.move.select(Moves.BEAT_UP);
-
-      await game.phaseInterceptor.to(MoveEffectPhase);
-
-      expect(playerPokemon.turnData.hitCount).toBe(12);
-      expect(enemyPokemon.hp).toBeLessThan(enemyStartingHp);
-
-      while (playerPokemon.turnData.hitsLeft > 0) {
-        enemyStartingHp = enemyPokemon.hp;
-        await game.phaseInterceptor.to(MoveEffectPhase);
-        expect(enemyPokemon.hp).toBeLessThan(enemyStartingHp);
-      }
     }
   );
 });

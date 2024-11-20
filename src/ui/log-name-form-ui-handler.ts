@@ -1,4 +1,4 @@
-import { FormModalUiHandler } from "./form-modal-ui-handler";
+import { FormModalUiHandler, InputFieldConfig } from "./form-modal-ui-handler";
 import { ModalConfig } from "./modal-ui-handler";
 import * as Utils from "../utils";
 import { Mode } from "./ui";
@@ -11,6 +11,14 @@ export default class LogNameFormUiHandler extends FormModalUiHandler {
 
   getModalTitle(config?: ModalConfig): string {
     return (this.name ? this.name : "Manage Log");
+  }
+
+  override getInputFieldConfigs(): InputFieldConfig[] {
+    const inputFieldConfigs: InputFieldConfig[] = [];
+    inputFieldConfigs.push({ label: "Name" });
+    inputFieldConfigs.push({ label: "Author(s)" });
+    inputFieldConfigs.push({ label: "Label" });
+    return inputFieldConfigs;
   }
 
   getFields(config?: ModalConfig): string[] {
@@ -85,7 +93,7 @@ export default class LogNameFormUiHandler extends FormModalUiHandler {
         console.log(`Calling LoggerTools.setFileInfo(${this.inputs[0].text}, ${this.inputs[1].text.split(",")})`);
         LoggerTools.setFileInfo(this.inputs[0].text, this.inputs[1].text.split(","), this.inputs[2].text);
         console.log("Calling originalLoginAction()");
-        originalLoginAction();
+        originalLoginAction && originalLoginAction();
       };
       const exportaction1 = config.buttonActions[1];
       config.buttonActions[1] = (_) => {

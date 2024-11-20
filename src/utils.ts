@@ -2,8 +2,20 @@ import { MoneyFormat } from "#enums/money-format";
 import * as LoggerTools from "./logger"
 import { Moves } from "#enums/moves";
 import i18next from "i18next";
+import { pokerogueApi } from "#app/plugins/api/pokerogue-api";
+
+export type nil = null | undefined;
 
 export const MissingTextureKey = "__MISSING";
+
+/** If enabled, the mod will push Log messages to the console when an RNG roll is performed. */
+const doRNGLogging = false;
+/** If enabled, the mod will not log simulated RNG rolls. */
+export const hideSimRNGLogging = false;
+/** If enabled, the mod will push Error messages to the console when an RNG roll is performed without being assigned a label. */
+const doUnlabeledRNGLogging = false;
+/** If enabled, the mod will push Log messages to the console when an RNG roll is performed that the Battle Seed does not influence. */
+const doUnseededRNGLogging = false;
 
 export function toReadableString(str: string): string {
   return str.replace(/\_/g, " ").split(" ").map(s => `${s.slice(0, 1)}${s.slice(1).toLowerCase()}`).join(" ");
@@ -86,8 +98,8 @@ export function randInt(range: integer, min: integer = 0, reason?: string): inte
     return min;
   }
   let V = Math.floor(Math.random() * range) + min;
-  if (reason != "%HIDE") {
-    //console.log("[unseeded] " + (reason ? reason : "randInt"), V)
+  if (reason != "%HIDE" && doRNGLogging && doUnseededRNGLogging) {
+    console.log("[unseeded] " + (reason ? reason : "randInt"), V)
   }
   return V;
 }
@@ -103,10 +115,10 @@ export function randSeedInt(range: integer, min: integer = 0, reason?: string): 
     return min;
   }
   let V = Phaser.Math.RND.integerInRange(min, (range - 1) + min);
-  if (reason != "%HIDE") {
+  if (reason != "%HIDE" && doRNGLogging) {
     if (reason) {
       console.log(reason, V)
-    } else {
+    } else if (doUnlabeledRNGLogging) {
       console.error("unlabeled randSeedInt", V)
     }
   }
@@ -150,18 +162,6 @@ export function randSeedWeightedItem<T>(items: T[], reason?: string): T {
     : rpick();
 }
 
-export function randSeedEasedWeightedItem<T>(items: T[], easingFunction: string = "Sine.easeIn"): T | null {
-  if (!items.length) {
-    return null;
-  }
-  if (items.length === 1) {
-    return items[0];
-  }
-  const value = Phaser.Math.RND.realInRange(0, 1);
-  const easedValue = Phaser.Tweens.Builders.GetEaseFunction(easingFunction)(value);
-  return items[Math.floor(easedValue * items.length)];
-}
-
 /**
  * Shuffle a list using the seeded rng. Utilises the Fisher-Yates algorithm.
  * @param {Array} items An array of items.
@@ -174,7 +174,7 @@ export function randSeedShuffle<T>(items: T[]): T[] {
   const newArray = items.slice(0);
   for (let i = items.length - 1; i > 0; i--) {
     const j = Phaser.Math.RND.integerInRange(0, i);
-    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    [ newArray[i], newArray[j] ] = [ newArray[j], newArray[i] ];
   }
   return newArray;
 }
@@ -223,23 +223,23 @@ export function formatLargeNumber(count: integer, threshold: integer): string {
   const ret = count.toString();
   let suffix = "";
   switch (Math.ceil(ret.length / 3) - 1) {
-  case 1:
-    suffix = "K";
-    break;
-  case 2:
-    suffix = "M";
-    break;
-  case 3:
-    suffix = "B";
-    break;
-  case 4:
-    suffix = "T";
-    break;
-  case 5:
-    suffix = "q";
-    break;
-  default:
-    return "?";
+    case 1:
+      suffix = "K";
+      break;
+    case 2:
+      suffix = "M";
+      break;
+    case 3:
+      suffix = "B";
+      break;
+    case 4:
+      suffix = "T";
+      break;
+    case 5:
+      suffix = "q";
+      break;
+    default:
+      return "?";
   }
   const digits = ((ret.length + 2) % 3) + 1;
   let decimalNumber = ret.slice(digits, digits + 2);
@@ -250,7 +250,7 @@ export function formatLargeNumber(count: integer, threshold: integer): string {
 }
 
 // Abbreviations from 10^0 to 10^33
-const AbbreviationsLargeNumber: string[] = ["", "K", "M", "B", "t", "q", "Q", "s", "S", "o", "n", "d"];
+const AbbreviationsLargeNumber: string[] = [ "", "K", "M", "B", "t", "q", "Q", "s", "S", "o", "n", "d" ];
 
 export function formatFancyLargeNumber(number: number, rounded: number = 3): string {
   let exponent: number;
@@ -299,9 +299,16 @@ export const isLocal = (
    /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/.test(window.location.hostname)) &&
   window.location.port !== "") || window.location.hostname === "";
 
-export const localServerUrl = import.meta.env.VITE_SERVER_URL ?? `http://${window.location.hostname}:${window.location.port+1}`;
+/**
+ * @deprecated Refer to [pokerogue-api.ts](./plugins/api/pokerogue-api.ts) instead
+ */
+export const localServerUrl = import.meta.env.VITE_SERVER_URL ?? `http://${window.location.hostname}:${window.location.port + 1}`;
 
-// Set the server URL based on whether it's local or not
+/**
+ * Set the server URL based on whether it's local or not
+ *
+ * @deprecated Refer to [pokerogue-api.ts](./plugins/api/pokerogue-api.ts) instead
+ */
 export const apiUrl = localServerUrl ?? "https://api.pokerogue.net";
 // used to disable api calls when isLocal is true and a server is not found
 export let isLocalServerConnected = true;
@@ -348,46 +355,12 @@ export function getCookie(cName: string): string {
  * with a GET request to verify if a server is running,
  * sets isLocalServerConnected based on results
  */
-export function localPing() {
+export async function localPing() {
   if (isLocal) {
-    apiFetch("game/titlestats")
-      .then(resolved => isLocalServerConnected = true,
-        rejected => isLocalServerConnected = false
-      );
+    const titleStats = await pokerogueApi.getGameTitleStats();
+    isLocalServerConnected = !!titleStats;
+    console.log("isLocalServerConnected:", isLocalServerConnected);
   }
-}
-
-export function apiFetch(path: string, authed: boolean = false): Promise<Response> {
-  return (isLocal && isLocalServerConnected) || !isLocal ? new Promise((resolve, reject) => {
-    const request = {};
-    if (authed) {
-      const sId = getCookie(sessionIdKey);
-      if (sId) {
-        request["headers"] = { "Authorization": sId };
-      }
-    }
-    fetch(`${apiUrl}/${path}`, request)
-      .then(response => resolve(response))
-      .catch(err => reject(err));
-  }) : new Promise(() => {});
-}
-
-export function apiPost(path: string, data?: any, contentType: string = "application/json", authed: boolean = false): Promise<Response> {
-  return (isLocal && isLocalServerConnected) || !isLocal ? new Promise((resolve, reject) => {
-    const headers = {
-      "Accept": contentType,
-      "Content-Type": contentType,
-    };
-    if (authed) {
-      const sId = getCookie(sessionIdKey);
-      if (sId) {
-        headers["Authorization"] = sId;
-      }
-    }
-    fetch(`${apiUrl}/${path}`, { method: "POST", headers: headers, body: data })
-      .then(response => resolve(response))
-      .catch(err => reject(err));
-  }) : new Promise(() => {});
 }
 
 /** Alias for the constructor of a class */
@@ -409,18 +382,21 @@ export class NumberHolder {
   }
 }
 
+/** @deprecated Use {@linkcode NumberHolder} */
 export class IntegerHolder extends NumberHolder {
   constructor(value: integer) {
     super(value);
   }
 }
 
+/** @deprecated Use {@linkcode NumberHolder}*/
 export class FixedInt extends IntegerHolder {
   constructor(value: integer) {
     super(value);
   }
 }
 
+/** @deprecated */
 export function fixedInt(value: integer): integer {
   return new FixedInt(value) as unknown as integer;
 }
@@ -450,7 +426,7 @@ export function rgbToHsv(r: integer, g: integer, b: integer) {
   const v = Math.max(r, g, b);
   const c = v - Math.min(r, g, b);
   const h = c && ((v === r) ? (g - b) / c : ((v === g) ? 2 + (b - r) / c : 4 + (r - g) / c));
-  return [ 60 * (h < 0 ? h + 6 : h), v && c / v, v];
+  return [ 60 * (h < 0 ? h + 6 : h), v && c / v, v ];
 }
 
 /**
@@ -470,7 +446,7 @@ export function deltaRgb(rgb1: integer[], rgb2: integer[]): integer {
 }
 
 export function rgbHexToRgba(hex: string) {
-  const color = hex.match(/^([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i)!; // TODO: is this bang correct?
+  const color = hex.match(/^([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i) ?? [ "000000", "00", "00", "00" ];
   return {
     r: parseInt(color[1], 16),
     g: parseInt(color[2], 16),
@@ -503,41 +479,42 @@ export function hslToHex(h: number, s: number, l: number): string {
   return `#${f(0)}${f(8)}${f(4)}`;
 }
 
-/*This function returns true if the current lang is available for some functions
-If the lang is not in the function, it usually means that lang is going to use the default english version
-This function is used in:
-- summary-ui-handler.ts: If the lang is not available, it'll use types.json (english)
-English itself counts as not available
+/**
+ * This function returns `true` if all localized images used by the game have been added for the given language.
+ *
+ * If the lang is not in the function, it usually means that lang is going to use the default english version
+ *
+ * English itself counts as not available
 */
-export function verifyLang(lang?: string): boolean {
-  //IMPORTANT - ONLY ADD YOUR LANG HERE IF YOU'VE ALREADY ADDED ALL THE NECESSARY IMAGES
+export function hasAllLocalizedSprites(lang?: string): boolean {
+  // IMPORTANT - ONLY ADD YOUR LANG HERE IF YOU'VE ALREADY ADDED ALL THE NECESSARY IMAGES
   if (!lang) {
     lang = i18next.resolvedLanguage;
   }
 
   switch (lang) {
-  case "es":
-  case "fr":
-  case "de":
-  case "it":
-  case "zh-CN":
-  case "zh-TW":
-  case "pt-BR":
-  case "ko":
-  case "ja":
-    return true;
-  default:
-    return false;
+    case "es-ES":
+    case "fr":
+    case "de":
+    case "it":
+    case "zh-CN":
+    case "zh-TW":
+    case "pt-BR":
+    case "ko":
+    case "ja":
+      return true;
+    default:
+      return false;
   }
 }
 
 /**
- * Prints the type and name of all game objects in a container for debuggin purposes
+ * Prints the type and name of all game objects in a container for debugging purposes
  * @param container container with game objects inside it
  */
 export function printContainerList(container: Phaser.GameObjects.Container): void {
   console.log(container.list.map(go => {
-    return {type: go.type, name: go.name};
+    return { type: go.type, name: go.name };
   }));
 }
 
@@ -607,17 +584,12 @@ export function capitalizeString(str: string, sep: string, lowerFirstChar: boole
   return null;
 }
 
-/**
- * Returns if an object is null or undefined
- * @param object
- */
 export function isNullOrUndefined(object: any): object is undefined | null {
   return null === object || undefined === object;
 }
 
 /**
  * Capitalizes the first letter of a string
- * @param str
  */
 export function capitalizeFirstLetter(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
@@ -643,7 +615,7 @@ export function toDmgValue(value: number, minValue: number = 1) {
  * @returns the localized sprite key
  */
 export function getLocalizedSpriteKey(baseKey: string) {
-  return `${baseKey}${verifyLang(i18next.resolvedLanguage) ? `_${i18next.resolvedLanguage}` : ""}`;
+  return `${baseKey}${hasAllLocalizedSprites(i18next.resolvedLanguage) ? `_${i18next.resolvedLanguage}` : ""}`;
 }
 
 /**
@@ -651,7 +623,7 @@ export function getLocalizedSpriteKey(baseKey: string) {
  * @param num the number to check
  * @param min the minimum value (included)
  * @param max the maximum value (included)
- * @returns true if number is **inclusive** between min and max
+ * @returns `true` if number is **inclusive** between min and max
  */
 export function isBetween(num: number, min: number, max: number): boolean {
   return num >= min && num <= max;
@@ -664,4 +636,15 @@ export function isBetween(num: number, min: number, max: number): boolean {
  */
 export function animationFileName(move: Moves): string {
   return Moves[move].toLowerCase().replace(/\_/g, "-");
+}
+
+/**
+ * Transforms a camelCase string into a kebab-case string
+ * @param str The camelCase string
+ * @returns A kebab-case string
+ *
+ * @source {@link https://stackoverflow.com/a/67243723/}
+ */
+export function camelCaseToKebabCase(str: string): string {
+  return str.replace(/[A-Z]+(?![a-z])|[A-Z]/g, (s, o) => (o ? "-" : "") + s.toLowerCase());
 }
