@@ -2091,7 +2091,7 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
   if (func_output != "") {
     return func_output
   }
-  return "---"
+  return "Can't catch"
   var n = ""
   switch (rates2[0][0]) {
     case rates[0]:
