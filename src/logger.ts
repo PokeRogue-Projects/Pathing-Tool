@@ -2036,7 +2036,7 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
   scene.currentBattle.multiInt(scene, critCap, offset + 1, 256, undefined, "Critical Capture Check")
   var crit_rates = rates.slice()
   for (var i = 0; i < crit_rates.length; i++) {
-    crit_rates[i] = getCriticalCaptureChance(this.scene, crit_rates[i]);
+    crit_rates[i] = getCriticalCaptureChance(scene, crit_rates[i]);
   }
   offset++
   scene.currentBattle.multiInt(scene, rolls, offset + 3, 65536, undefined, "Catch prediction")
