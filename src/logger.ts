@@ -27,6 +27,7 @@ import { Abilities } from "./enums/abilities";
 import { getBiomeName } from "./data/balance/biomes";
 import { Nature } from "./enums/nature";
 import { StatusEffect } from "./enums/status-effect";
+import { getCriticalCaptureChance } from "./data/pokeball";
 
 /*
 SECTIONS
@@ -2020,6 +2021,7 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
   var rates = catchCalc(pokemon)
   var rates_raw = catchCalcRaw(pokemon)
   var rolls = []
+  var critCap = []
   var offset = 0
   scene.getModifiers(BypassSpeedChanceModifier, true).forEach(m => {
     //console.log(m, m.getPokemon(this.scene), pokemon)
@@ -2031,6 +2033,12 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
       }
     })
   })
+  scene.currentBattle.multiInt(scene, critCap, offset + 1, 256, undefined, "Critical Capture Check")
+  var crit_rates = rates.slice()
+  for (var i = 0; i < crit_rates.length; i++) {
+    crit_rates[i] = getCriticalCaptureChance(this.scene, crit_rates[i]);
+  }
+  offset++
   scene.currentBattle.multiInt(scene, rolls, offset + 3, 65536, undefined, "Catch prediction")
   //console.log(rolls)
   //console.log(rolls.slice(offset, offset + 3))
@@ -2038,10 +2046,13 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
   if (scene.pokeballCounts[1] == 0 && !override) rates[1] = 0
   if (scene.pokeballCounts[2] == 0 && !override) rates[2] = 0
   if (scene.pokeballCounts[3] == 0 && !override) rates[3] = 0
-  var rates2 = rates.slice()
+  let rates2: number[][] = []
+  for (var i = 0; i < rates.length; i++) {
+    rates2[i] = [rates[i], crit_rates[i]]
+  }
   rates2.sort(function(a, b) {
-return b - a
-})
+    return b[0] - a[0]
+  })
   const ballNames = [
     "Poké Ball",
     "Great Ball",
@@ -2057,11 +2068,13 @@ return b - a
     //console.log(v, rolls[offset + 0], v > rolls[offset + 0])
     //console.log(v, rolls[offset + 1], v > rolls[offset + 1])
     //console.log(v, rolls[offset + 2], v > rolls[offset + 2])
-    if (v > rolls[offset + 0]) {
+    if (v[0] > rolls[offset + 0]) {
       //console.log("1 roll")
-      if (v > rolls[offset + 1]) {
+      if (v[1] < crit_rates[i]) {
+        func_output = ballNames[i] + " crits"
+      } else if (v[0] > rolls[offset + 1]) {
         //console.log("2 roll")
-        if (v > rolls[offset + 2]) {
+        if (v[0] > rolls[offset + 2]) {
           //console.log("Caught!")
           if (func_output == "") {
             func_output = ballNames[i] + " catches"
@@ -2069,7 +2082,7 @@ return b - a
         }
       }
     }
-    if (v > rolls[offset] && v > rolls[1 + offset] && v > rolls[2 + offset]) {
+    if (v[0] > rolls[offset] && v[0] > rolls[1 + offset] && v[0] > rolls[2 + offset]) {
       if (func_output == "") {
         func_output = ballNames[i] + " catches"
       }
@@ -2078,9 +2091,9 @@ return b - a
   if (func_output != "") {
     return func_output
   }
-  return "Can't catch"
+  return "---"
   var n = ""
-  switch (rates2[0]) {
+  switch (rates2[0][0]) {
     case rates[0]:
       // Poke Balls are best
       n = "Poké Ball "
@@ -2106,7 +2119,7 @@ return b - a
       }
   }
   return n + " (FAIL)"
-  return n + Math.round(rates2[0] * 100) + "%";
+  return n + Math.round(rates2[0][0] * 100) + "%";
 }
 export function parseSlotData(slotId: integer): SessionSaveData | undefined {
   var S = localStorage.getItem(`sessionData${slotId ? slotId : ""}_${loggedInUser?.username}`)
