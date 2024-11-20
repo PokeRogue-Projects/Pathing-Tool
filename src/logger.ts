@@ -2048,7 +2048,7 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
   if (scene.pokeballCounts[3] == 0 && !override) rates[3] = 0
   let rates2: number[][] = []
   for (var i = 0; i < rates.length; i++) {
-    rates2[i] = [rates[i], crit_rates[i]]
+    rates2[i] = [rates[i], crit_rates[i], Math.round(65536 / Math.pow((255 / rates_raw[i]), 0.1875))]
   }
   rates2.sort(function(a, b) {
     return b[0] - a[0]
@@ -2068,13 +2068,13 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
     //console.log(v, rolls[offset + 0], v > rolls[offset + 0])
     //console.log(v, rolls[offset + 1], v > rolls[offset + 1])
     //console.log(v, rolls[offset + 2], v > rolls[offset + 2])
-    if (v[0] > rolls[offset + 0]) {
+    if (v[2] > rolls[offset + 0]) {
       //console.log("1 roll")
       if (v[1] < crit_rates[i]) {
         func_output = ballNames[i] + " crits"
-      } else if (v[0] > rolls[offset + 1]) {
+      } else if (v[2] > rolls[offset + 1]) {
         //console.log("2 roll")
-        if (v[0] > rolls[offset + 2]) {
+        if (v[2] > rolls[offset + 2]) {
           //console.log("Caught!")
           if (func_output == "") {
             func_output = ballNames[i] + " catches"
@@ -2082,7 +2082,7 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
         }
       }
     }
-    if (v[0] > rolls[offset] && v[0] > rolls[1 + offset] && v[0] > rolls[2 + offset]) {
+    if (v[2] > rolls[offset] && v[2] > rolls[1 + offset] && v[2] > rolls[2 + offset]) {
       if (func_output == "") {
         func_output = ballNames[i] + " catches"
       }
