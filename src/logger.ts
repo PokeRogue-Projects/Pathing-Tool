@@ -1977,38 +1977,31 @@ export function runShinyCheck(scene: BattleScene, mode: integer, wv?: integer) {
   }
   return [isOk, minLuck]
 }
-function catchCalc(pokemon: EnemyPokemon) {
-  const _3m = 3 * pokemon.getMaxHp();
-  const _2h = 2 * pokemon.hp;
-  const catchRate = pokemon.species.catchRate;
-  const statusMultiplier = pokemon.status ? getStatusEffectCatchRateMultiplier(pokemon.status.effect) : 1;
-  const rate1 = Math.round(65536 / Math.sqrt(Math.sqrt(255 / (Math.round((((_3m - _2h) * catchRate * 1) / _3m) * statusMultiplier)))));
-  const rate2 = Math.round(65536 / Math.sqrt(Math.sqrt(255 / (Math.round((((_3m - _2h) * catchRate * 1.5) / _3m) * statusMultiplier)))));
-  const rate3 = Math.round(65536 / Math.sqrt(Math.sqrt(255 / (Math.round((((_3m - _2h) * catchRate * 2) / _3m) * statusMultiplier)))));
-  const rate4 = Math.round(65536 / Math.sqrt(Math.sqrt(255 / (Math.round((((_3m - _2h) * catchRate * 3) / _3m) * statusMultiplier)))));
-
-  var rates = [rate1, rate2, rate3, rate4]
-  var rates2 = rates.map(r => ((r/65536) ** 3))
-  //console.log(rates2)
-
-  return rates2
+function generateBallChance(pk: EnemyPokemon, pokeballMultiplier: number) {
+  const _3m = 3 * pk.getMaxHp();
+  const _2h = 2 * pk.hp;
+  const catchRate = pk.species.catchRate;
+  const statusMultiplier = pk.status ? getStatusEffectCatchRateMultiplier(pk.status.effect) : 1;
+  return Math.round(65536 / Math.pow((255 / Math.round((((_3m - _2h) * catchRate * pokeballMultiplier) / _3m) * statusMultiplier)), 0.1875))
 }
-function catchCalcRaw(pokemon: EnemyPokemon) {
-  const _3m = 3 * pokemon.getMaxHp();
-  const _2h = 2 * pokemon.hp;
-  const catchRate = pokemon.species.catchRate;
-  const statusMultiplier = pokemon.status ? getStatusEffectCatchRateMultiplier(pokemon.status.effect) : 1;
-  const rate1 = Math.round(65536 / Math.sqrt(Math.sqrt(255 / (Math.round((((_3m - _2h) * catchRate * 1) / _3m) * statusMultiplier)))));
-  const rate2 = Math.round(65536 / Math.sqrt(Math.sqrt(255 / (Math.round((((_3m - _2h) * catchRate * 1.5) / _3m) * statusMultiplier)))));
-  const rate3 = Math.round(65536 / Math.sqrt(Math.sqrt(255 / (Math.round((((_3m - _2h) * catchRate * 2) / _3m) * statusMultiplier)))));
-  const rate4 = Math.round(65536 / Math.sqrt(Math.sqrt(255 / (Math.round((((_3m - _2h) * catchRate * 3) / _3m) * statusMultiplier)))));
-
-  var rates = [rate1, rate2, rate3, rate4]
-  var rates2 = rates.map(r => ((r/65536) ** 3))
-  //console.log(rates2)
-  //console.log("output: ", rates)
-
-  return rates
+function generateCritChance(pk: EnemyPokemon, pokeballMultiplier: number) {
+  const _3m = 3 * pk.getMaxHp();
+  const _2h = 2 * pk.hp;
+  const catchRate = pk.species.catchRate;
+  const statusMultiplier = pk.status ? getStatusEffectCatchRateMultiplier(pk.status.effect) : 1;
+  return getCriticalCaptureChance(pk.scene, Math.round((((_3m - _2h) * catchRate * pokeballMultiplier) / _3m) * statusMultiplier));
+}
+function catchCalc(pokemon: EnemyPokemon) {
+  var rates = [
+    [generateBallChance(pokemon, 1), 0, generateCritChance(pokemon, 1)],
+    [generateBallChance(pokemon, 1.5), 0, generateCritChance(pokemon, 1.5)],
+    [generateBallChance(pokemon, 2), 0, generateCritChance(pokemon, 2)],
+    [generateBallChance(pokemon, 3), 0, generateCritChance(pokemon, 3)]
+  ];
+  for (var i = 0; i < rates.length; i++) {
+    rates[i][1] = (rates[i][0]/65536) ** 3
+  }
+  return rates;
 }
 
 /**
@@ -2019,7 +2012,6 @@ function catchCalcRaw(pokemon: EnemyPokemon) {
  */
 export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: boolean) {
   var rates = catchCalc(pokemon)
-  var rates_raw = catchCalcRaw(pokemon)
   var rolls = []
   var critCap = []
   var offset = 0
@@ -2034,28 +2026,20 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
     })
   })
   scene.currentBattle.multiInt(scene, critCap, offset + 1, 256, undefined, "Critical Capture Check")
-  var crit_rates = rates.slice()
-  for (var i = 0; i < crit_rates.length; i++) {
-    crit_rates[i] = getCriticalCaptureChance(scene, crit_rates[i]);
-  }
   offset++
   scene.currentBattle.multiInt(scene, rolls, offset + 3, 65536, undefined, "Catch prediction")
   //console.log(rolls)
   //console.log(rolls.slice(offset, offset + 3))
-  if (scene.pokeballCounts[0] == 0 && !override) rates[0] = 0
-  if (scene.pokeballCounts[1] == 0 && !override) rates[1] = 0
-  if (scene.pokeballCounts[2] == 0 && !override) rates[2] = 0
-  if (scene.pokeballCounts[3] == 0 && !override) rates[3] = 0
-  let rates2: number[][] = []
-  for (var i = 0; i < rates.length; i++) {
-    rates2[i] = [rates[i], crit_rates[i], rates_raw[i], Math.round(65536 / Math.pow((255 / rates_raw[i]), 0.1875)), i]
-  }
+  if (scene.pokeballCounts[0] == 0 && !override) rates[0][0] = 0
+  if (scene.pokeballCounts[1] == 0 && !override) rates[1][0] = 0
+  if (scene.pokeballCounts[2] == 0 && !override) rates[2][0] = 0
+  if (scene.pokeballCounts[3] == 0 && !override) rates[3][0] = 0
   console.log("Rate data [catch rate value, crit rate goal, modified catch rate, old index]")
-  for (var i = 0; i < rates2.length; i++) {
-    console.log(rates2[i])
+  for (var i = 0; i < rates.length; i++) {
+    console.log(rates[i])
   }
   console.log("Note: if middle number is less than " + critCap[0] + ", a critical capture should occur")
-  rates2.sort(function(a, b) {
+  rates.sort(function(a, b) {
     return b[0] - a[0]
   })
   const ballNames = [
@@ -2066,8 +2050,11 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
     "Master Ball"
   ]
   var func_output = ""
-  rates2.forEach((v, i) => {
+  rates.forEach((v, i) => {
     console.log("Ball: " + ballNames[i], v)
+    var rawRate = v[0]
+    var catchRate = v[1]
+    var critRate = v[2]
     if (scene.pokeballCounts[i] == 0 && !override) {
       console.log("  Skipped because the player doesn't have any of this ball")
       return; // Don't list success for Poke Balls we don't have
@@ -2076,31 +2063,32 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
     //console.log(v, rolls[offset + 0], v > rolls[offset + 0])
     //console.log(v, rolls[offset + 1], v > rolls[offset + 1])
     //console.log(v, rolls[offset + 2], v > rolls[offset + 2])
-    if (v[3] > rolls[offset + 0]) {
-      console.log(`  Passed roll 1 (${rolls[offset + 0]} < ${v[3]})`)
+    console.log(`  Critical capture requirement: (${critCap[0]} < ${critRate})`)
+    if (rawRate > rolls[offset + 0]) {
+      console.log(`  Passed roll 1 (${rolls[offset + 0]} < ${rawRate})`)
       //console.log("1 roll")
-      if (critCap[0] < v[1]) {
+      if (critCap[0] < critRate) {
         func_output = ballNames[i] + " crits"
-        console.log(`  Critical capture triggered (${critCap[0]} < ${v[1]}) - ended early`)
-      } else if (v[3] > rolls[offset + 1]) {
+        console.log(`  Critical capture triggered (${critCap[0]} < ${critRate}) - ended early`)
+      } else if (rawRate > rolls[offset + 1]) {
         //console.log("2 roll")
-        console.log(`  Passed roll 2 (${rolls[offset + 1]} < ${v[3]} )`)
-        if (v[3] > rolls[offset + 2]) {
+        console.log(`  Passed roll 2 (${rolls[offset + 1]} < ${rawRate} )`)
+        if (rawRate > rolls[offset + 2]) {
           //console.log("Caught!")
-          console.log(`  Passed roll 3 (${rolls[offset + 2]} < ${v[3]} ) - capture successful`)
+          console.log(`  Passed roll 3 (${rolls[offset + 2]} < ${rawRate} ) - capture successful`)
           if (func_output == "") {
             func_output = ballNames[i] + " catches"
           }
         } else {
-          console.log(`  Failed roll 3 (checked for ${rolls[offset + 2]} < ${v[3]})`)
+          console.log(`  Failed roll 3 (checked for ${rolls[offset + 2]} < ${rawRate})`)
         }
       } else {
-        console.log(`  Failed roll 2 (checked for ${rolls[offset + 1]} < ${v[3]})`)
+        console.log(`  Failed roll 2 (checked for ${rolls[offset + 1]} < ${rawRate})`)
       }
     } else {
-      console.log(`  Failed roll 1 (checked for ${rolls[offset + 0]} < ${v[3]})`)
+      console.log(`  Failed roll 1 (checked for ${rolls[offset + 0]} < ${rawRate})`)
     }
-    if (v[3] > rolls[offset] && v[3] > rolls[1 + offset] && v[3] > rolls[2 + offset]) {
+    if (rawRate > rolls[offset] && rawRate > rolls[1 + offset] && rawRate > rolls[2 + offset]) {
       if (func_output == "") {
         console.error(`  Bug occurred - check failed, but secondary check passed; this should never occur`)
         func_output = ballNames[i] + " catches"
@@ -2108,37 +2096,9 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
     }
   })
   if (func_output != "") {
-    return func_output
+    return func_output;
   }
-  return "---"
-  var n = ""
-  switch (rates2[0][0]) {
-    case rates[0]:
-      // Poke Balls are best
-      n = "Poké Ball "
-      break;
-    case rates[1]:
-      // Great Balls are best
-      n = "Great Ball "
-      break;
-    case rates[2]:
-      // Ultra Balls are best
-      n = "Ultra Ball "
-      break;
-    case rates[3]:
-      // Rogue Balls are best
-      n = "Rogue Ball "
-      break;
-    default:
-      // Master Balls are the only thing that will work
-      if (scene.pokeballCounts[4] != 0 || override) {
-        return "Master Ball";
-      } else {
-        return "No balls"
-      }
-  }
-  return n + " (FAIL)"
-  return n + Math.round(rates2[0][0] * 100) + "%";
+  return "---";
 }
 export function parseSlotData(slotId: integer): SessionSaveData | undefined {
   var S = localStorage.getItem(`sessionData${slotId ? slotId : ""}_${loggedInUser?.username}`)
