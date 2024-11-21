@@ -2048,8 +2048,13 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
   if (scene.pokeballCounts[3] == 0 && !override) rates[3] = 0
   let rates2: number[][] = []
   for (var i = 0; i < rates.length; i++) {
-    rates2[i] = [rates[i], crit_rates[i], Math.round(65536 / Math.pow((255 / rates_raw[i]), 0.1875))]
+    rates2[i] = [rates[i], crit_rates[i], rates_raw[i], Math.round(65536 / Math.pow((255 / rates_raw[i]), 0.1875)), i]
   }
+  console.log("Rate data [catch rate value, crit rate goal, modified catch rate, old index]")
+  for (var i = 0; i < rates2.length; i++) {
+    console.log(rates2[i])
+  }
+  console.log("Note: if middle number is less than " + critCap[0] + ", a critical capture should occur")
   rates2.sort(function(a, b) {
     return b[0] - a[0]
   })
@@ -2061,29 +2066,43 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
     "Master Ball"
   ]
   var func_output = ""
-  rates_raw.forEach((v, i) => {
-    if (scene.pokeballCounts[i] == 0 && !override)
+  rates2.forEach((v, i) => {
+    console.log("Ball: " + ballNames[i], v)
+    if (scene.pokeballCounts[i] == 0 && !override) {
+      console.log("  Skipped because the player doesn't have any of this ball")
       return; // Don't list success for Poke Balls we don't have
+    }
     //console.log(ballNames[i])
     //console.log(v, rolls[offset + 0], v > rolls[offset + 0])
     //console.log(v, rolls[offset + 1], v > rolls[offset + 1])
     //console.log(v, rolls[offset + 2], v > rolls[offset + 2])
-    if (v[2] > rolls[offset + 0]) {
+    if (v[3] > rolls[offset + 0]) {
+      console.log(`  Passed roll 1 (${rolls[offset + 0]} < ${v[3]})`)
       //console.log("1 roll")
-      if (v[1] < crit_rates[i]) {
+      if (critCap[0] < v[1]) {
         func_output = ballNames[i] + " crits"
-      } else if (v[2] > rolls[offset + 1]) {
+        console.log(`  Critical capture triggered (${critCap[0]} < ${v[1]}) - ended early`)
+      } else if (v[3] > rolls[offset + 1]) {
         //console.log("2 roll")
-        if (v[2] > rolls[offset + 2]) {
+        console.log(`  Passed roll 2 (${rolls[offset + 1]} < ${v[3]} )`)
+        if (v[3] > rolls[offset + 2]) {
           //console.log("Caught!")
+          console.log(`  Passed roll 3 (${rolls[offset + 2]} < ${v[3]} ) - capture successful`)
           if (func_output == "") {
             func_output = ballNames[i] + " catches"
           }
+        } else {
+          console.log(`  Failed roll 3 (checked for ${rolls[offset + 2]} < ${v[3]})`)
         }
+      } else {
+        console.log(`  Failed roll 2 (checked for ${rolls[offset + 1]} < ${v[3]})`)
       }
+    } else {
+      console.log(`  Failed roll 1 (checked for ${rolls[offset + 0]} < ${v[3]})`)
     }
-    if (v[2] > rolls[offset] && v[2] > rolls[1 + offset] && v[2] > rolls[2 + offset]) {
+    if (v[3] > rolls[offset] && v[3] > rolls[1 + offset] && v[3] > rolls[2 + offset]) {
       if (func_output == "") {
+        console.error(`  Bug occurred - check failed, but secondary check passed; this should never occur`)
         func_output = ballNames[i] + " catches"
       }
     }
