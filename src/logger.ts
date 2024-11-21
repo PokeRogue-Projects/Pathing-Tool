@@ -72,7 +72,7 @@ export const acceptedVersions = [
 ]
 
 /** Toggles console messages about catch prediction. */
-const catchDebug: boolean = false;
+const catchDebug: boolean = true;
 
 // Value holders
 /** Holds the encounter rarities for the Pokemon in this wave. */
@@ -2071,7 +2071,7 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
       if (catchDebug) console.log(`  Passed roll 1 (${rolls[offset + 0]} < ${rawRate})`)
       //console.log("1 roll")
       if (critCap[0] < critRate) {
-        func_output = ballNames[i] + " crits"
+        func_output = ballNames[v[3]] + " crits"
         if (catchDebug) console.log(`  Critical capture triggered (${critCap[0]} < ${critRate}) - ended early`)
       } else if (rawRate > rolls[offset + 1]) {
         //console.log("2 roll")
@@ -2079,9 +2079,7 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
         if (rawRate > rolls[offset + 2]) {
           //console.log("Caught!")
           if (catchDebug) console.log(`  Passed roll 3 (${rolls[offset + 2]} < ${rawRate} ) - capture successful`)
-          if (func_output == "") {
-            func_output = ballNames[i] + " catches"
-          }
+          func_output = ballNames[v[3]] + " catches"
         } else {
           if (catchDebug) console.log(`  Failed roll 3 (checked for ${rolls[offset + 2]} < ${rawRate})`)
         }
@@ -2090,12 +2088,6 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
       }
     } else {
       if (catchDebug) console.log(`  Failed roll 1 (checked for ${rolls[offset + 0]} < ${rawRate})`)
-    }
-    if (rawRate > rolls[offset] && rawRate > rolls[1 + offset] && rawRate > rolls[2 + offset]) {
-      if (func_output == "") {
-        console.error(`  Bug occurred - check failed, but secondary check passed; this should never occur`)
-        func_output = ballNames[i] + " catches"
-      }
     }
   })
   if (func_output != "") {
