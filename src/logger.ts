@@ -71,6 +71,9 @@ export const acceptedVersions = [
   "1.1.0b",
 ]
 
+/** Toggles console messages about catch prediction. */
+const catchDebug: boolean = false;
+
 // Value holders
 /** Holds the encounter rarities for the Pokemon in this wave. */
 export const rarities = []
@@ -1993,10 +1996,10 @@ function generateCritChance(pk: EnemyPokemon, pokeballMultiplier: number) {
 }
 function catchCalc(pokemon: EnemyPokemon) {
   var rates = [
-    [generateBallChance(pokemon, 1), 0, generateCritChance(pokemon, 1)],
-    [generateBallChance(pokemon, 1.5), 0, generateCritChance(pokemon, 1.5)],
-    [generateBallChance(pokemon, 2), 0, generateCritChance(pokemon, 2)],
-    [generateBallChance(pokemon, 3), 0, generateCritChance(pokemon, 3)]
+    [generateBallChance(pokemon, 1), 0, generateCritChance(pokemon, 1), 0],
+    [generateBallChance(pokemon, 1.5), 0, generateCritChance(pokemon, 1.5), 1],
+    [generateBallChance(pokemon, 2), 0, generateCritChance(pokemon, 2), 2],
+    [generateBallChance(pokemon, 3), 0, generateCritChance(pokemon, 3), 3]
   ];
   for (var i = 0; i < rates.length; i++) {
     rates[i][1] = (rates[i][0]/65536) ** 3
@@ -2034,7 +2037,7 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
   if (scene.pokeballCounts[1] == 0 && !override) rates[1][0] = 0
   if (scene.pokeballCounts[2] == 0 && !override) rates[2][0] = 0
   if (scene.pokeballCounts[3] == 0 && !override) rates[3][0] = 0
-  console.log("Rate data [catch rate value, crit rate goal, modified catch rate, old index]")
+  console.log("Rate data [raw rate, % odds of success, crit rate, idx]")
   for (var i = 0; i < rates.length; i++) {
     console.log(rates[i])
   }
@@ -2051,42 +2054,42 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
   ]
   var func_output = ""
   rates.forEach((v, i) => {
-    console.log("Ball: " + ballNames[i], v)
+    if (catchDebug) console.log("Ball: " + ballNames[v[3]], v)
     var rawRate = v[0]
     var catchRate = v[1]
     var critRate = v[2]
     if (scene.pokeballCounts[i] == 0 && !override) {
-      console.log("  Skipped because the player doesn't have any of this ball")
+      if (catchDebug) console.log("  Skipped because the player doesn't have any of this ball")
       return; // Don't list success for Poke Balls we don't have
     }
     //console.log(ballNames[i])
     //console.log(v, rolls[offset + 0], v > rolls[offset + 0])
     //console.log(v, rolls[offset + 1], v > rolls[offset + 1])
     //console.log(v, rolls[offset + 2], v > rolls[offset + 2])
-    console.log(`  Critical capture requirement: (${critCap[0]} < ${critRate})`)
+    if (catchDebug) console.log(`  Critical capture requirement: (${critCap[0]} < ${critRate})`)
     if (rawRate > rolls[offset + 0]) {
-      console.log(`  Passed roll 1 (${rolls[offset + 0]} < ${rawRate})`)
+      if (catchDebug) console.log(`  Passed roll 1 (${rolls[offset + 0]} < ${rawRate})`)
       //console.log("1 roll")
       if (critCap[0] < critRate) {
         func_output = ballNames[i] + " crits"
-        console.log(`  Critical capture triggered (${critCap[0]} < ${critRate}) - ended early`)
+        if (catchDebug) console.log(`  Critical capture triggered (${critCap[0]} < ${critRate}) - ended early`)
       } else if (rawRate > rolls[offset + 1]) {
         //console.log("2 roll")
-        console.log(`  Passed roll 2 (${rolls[offset + 1]} < ${rawRate} )`)
+        if (catchDebug) console.log(`  Passed roll 2 (${rolls[offset + 1]} < ${rawRate} )`)
         if (rawRate > rolls[offset + 2]) {
           //console.log("Caught!")
-          console.log(`  Passed roll 3 (${rolls[offset + 2]} < ${rawRate} ) - capture successful`)
+          if (catchDebug) console.log(`  Passed roll 3 (${rolls[offset + 2]} < ${rawRate} ) - capture successful`)
           if (func_output == "") {
             func_output = ballNames[i] + " catches"
           }
         } else {
-          console.log(`  Failed roll 3 (checked for ${rolls[offset + 2]} < ${rawRate})`)
+          if (catchDebug) console.log(`  Failed roll 3 (checked for ${rolls[offset + 2]} < ${rawRate})`)
         }
       } else {
-        console.log(`  Failed roll 2 (checked for ${rolls[offset + 1]} < ${rawRate})`)
+        if (catchDebug) console.log(`  Failed roll 2 (checked for ${rolls[offset + 1]} < ${rawRate})`)
       }
     } else {
-      console.log(`  Failed roll 1 (checked for ${rolls[offset + 0]} < ${rawRate})`)
+      if (catchDebug) console.log(`  Failed roll 1 (checked for ${rolls[offset + 0]} < ${rawRate})`)
     }
     if (rawRate > rolls[offset] && rawRate > rolls[1 + offset] && rawRate > rolls[2 + offset]) {
       if (func_output == "") {
