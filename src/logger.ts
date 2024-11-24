@@ -72,7 +72,7 @@ export const acceptedVersions = [
 ]
 
 /** Toggles console messages about catch prediction. */
-const catchDebug: boolean = true;
+const catchDebug: boolean = false;
 
 // Value holders
 /** Holds the encounter rarities for the Pokemon in this wave. */
@@ -118,6 +118,44 @@ export function downloadLogByID(i: integer) {
   link.click();
   link.remove();
 }
+/**
+ * Saves a log to your device in an alternate format.
+ * @param i The index of the log you want to save.
+ */
+export function downloadLogByIDToCSV(i: integer) {
+  console.log(i)
+  var d = JSON.parse(localStorage.getItem(logs[i][1])!)
+  var waves = d["waves"];
+  var encounterList: string[] = [];
+  for (var i = 1; i < 50; i++) {
+    var wave = waves[i];
+    console.log(wave);
+    if (wave != null && wave.trainer == null) {
+      var pokemon1 = wave.pokemon[0];
+      if (pokemon1 == null) continue
+      encounterList.push(convertLogToCSV(wave, pokemon1));
+      if (wave.double) {
+        var pokemon2 = wave.pokemon[1];
+        if (pokemon2 == null) continue
+        encounterList.push(convertLogToCSV(wave, pokemon2));
+      }
+    }
+  }
+  var encounters = encounterList.join("\n");
+  const blob = new Blob([ encounters ], {type: "text/csv"});
+  const link = document.createElement("a");
+  link.href = window.URL.createObjectURL(blob);
+  var date: string = (d as DRPD).date
+  var filename: string = date[5] + date[6] + "_" + date[8] + date[9] + "_" + date[0] + date[1] + date[2] + date[3] + "_" + (d as DRPD).label + ".csv"
+  link.download = `${filename}`;
+  link.click();
+  link.remove();
+}
+
+function convertLogToCSV(wave: any, pokemon: any): string {
+  return `${wave.id},${Species[pokemon.id + 1]},${pokemon.id},${pokemon.formName},${Object.values(pokemon.iv_raw).join(",")},${pokemon.ability},${pokemon.passiveAbility},${pokemon.nature.name},${pokemon.gender},${pokemon.captured}`
+}
+
 /**
  * Saves a log to your device in an alternate format.
  * @param i The index of the log you want to save.
@@ -810,6 +848,11 @@ export function getWave(drpd: DRPD, floor: integer, scene: BattleScene): Wave {
         wv = drpd.waves[i]
         console.log("Found wave for floor " + floor + " at index " + i)
         if (wv.pokemon == undefined) wv.pokemon = []
+        if (wv.double && !scene.currentBattle.double) {
+          // previous log found is a double, but current is single, pop the last entry
+          wv.pokemon.pop();
+          wv.double = scene.currentBattle.double;
+        }
         return wv;
       }
     } else if (insertPos == undefined) {
@@ -1032,7 +1075,10 @@ export interface PokeData {
   /** The Pokémon that was used to generate this `PokeData`. Not exported.
    * @see Pokemon
    */
-  source?: Pokemon
+  source?: Pokemon,
+  /*
+   */
+  formName: string
 }
 /**
  * Exports a Pokemon's data as `PokeData`.
@@ -1054,7 +1100,8 @@ export function exportPokemon(pokemon: Pokemon, encounterRarity?: string): PokeD
     level: pokemon.level,
     items: pokemon.getHeldItems().map((item, idx) => exportItem(item)),
     iv_raw: exportIVs(pokemon.ivs),
-    iv: formatIVs(pokemon.ivs)
+    iv: formatIVs(pokemon.ivs),
+    formName: pokemon.species.forms[pokemon.formIndex]?.formName
   }
 }
 /**
@@ -1078,7 +1125,8 @@ export function exportPokemonFromData(pokemon: PokemonData, encounterRarity?: st
     level: pokemon.level,
     items: [],
     iv_raw: exportIVs(pokemon.ivs),
-    iv: formatIVs(pokemon.ivs)
+    iv: formatIVs(pokemon.ivs),
+    formName: "" // pokemon.species.forms[pokemon.formIndex]?.formName // PokemonData doesnt have EnemyPokemon, only species enum
   }
 }
 /**
@@ -1495,6 +1543,12 @@ export function generateEditOption(scene: BattleScene, i: integer, saves: any, p
             phase.callEnd()
           },
           () => {
+            console.log("Export to CSV")
+            scene.ui.playSelect();
+            downloadLogByIDToCSV(i)
+            phase.callEnd()
+          },
+          () => {
             console.log("Export to Sheets")
             scene.ui.playSelect();
             downloadLogByIDToSheet(i)
@@ -1560,6 +1614,12 @@ export function generateEditHandler(scene: BattleScene, logId: string, callback:
           callback()
         },
         () => {
+          console.log("Export to CSV")
+          scene.ui.playSelect();
+          downloadLogByIDToCSV(i)
+          callback()
+        },
+        () => {
           console.log("Export to Sheets")
           scene.ui.playSelect();
           downloadLogByIDToSheet(i)
@@ -1602,6 +1662,12 @@ export function generateEditHandlerForLog(scene: BattleScene, i: integer, callba
           console.log("Export")
           scene.ui.playSelect();
           downloadLogByID(i)
+          callback()
+        },
+        () => {
+          console.log("Export to CSV")
+          scene.ui.playSelect();
+          downloadLogByIDToCSV(i)
           callback()
         },
         () => {
