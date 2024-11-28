@@ -127,7 +127,7 @@ export function downloadLogByIDToCSV(i: integer) {
   var d = JSON.parse(localStorage.getItem(logs[i][1])!)
   var waves = d["waves"];
   var encounterList: string[] = [];
-  for (var i = 1; i < 50; i++) {
+  for (var i = 1; i < waves.length; i++) {
     var wave = waves[i];
     console.log(wave);
     if (wave != null && wave.trainer == null) {
@@ -1849,13 +1849,18 @@ export function logPokemon(scene: BattleScene, floor: integer = scene.currentBat
   }
   if (pk.rarity == undefined)
     pk.rarity = "[Unknown]"
+  if (scene.currentBattle.enemyParty.length == 1 && wv.pokemon.length >= 2) {
+    wv.pokemon = []
+  }
   wv.pokemon[slot] = pk;
+  wv.double = scene.currentBattle.double;
   //while (wv.actions.length > 0)
     //wv.actions.pop()
   //wv.actions = []
   wv.clearActionsFlag = false;
   wv.shop = ""
   drpd.seed = scene.seed
+  drpd.waves[floor] = wv;
   console.log("--> ", drpd)
   localStorage.setItem(getLogID(scene), JSON.stringify(drpd))
 }
