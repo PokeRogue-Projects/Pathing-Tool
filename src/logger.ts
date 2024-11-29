@@ -127,18 +127,20 @@ export function downloadLogByIDToCSV(i: integer) {
   var d = JSON.parse(localStorage.getItem(logs[i][1])!)
   var waves = d["waves"];
   var encounterList: string[] = [];
-  for (var i = 1; i < 50; i++) {
+  for (var i = 1; i < waves.length; i++) {
     var wave = waves[i];
     console.log(wave);
     if (wave != null && wave.trainer == null) {
       var pokemon1 = wave.pokemon[0];
-      if (pokemon1 == null) continue
-      encounterList.push(convertLogToCSV(wave, pokemon1));
+      if (pokemon1 == null) continue;
+      encounterList.push(convertPokemonToCSV(wave, pokemon1, false));
       if (wave.double) {
         var pokemon2 = wave.pokemon[1];
-        if (pokemon2 == null) continue
-        encounterList.push(convertLogToCSV(wave, pokemon2));
+        if (pokemon2 == null) continue;
+        encounterList.push(convertPokemonToCSV(wave, pokemon2, true));
       }
+    } else if (wave != null) {
+      encounterList.push(convertTrainerToCSV(wave, wave.trainer));
     }
   }
   var encounters = encounterList.join("\n");
@@ -152,8 +154,12 @@ export function downloadLogByIDToCSV(i: integer) {
   link.remove();
 }
 
-function convertLogToCSV(wave: any, pokemon: any): string {
-  return `${wave.id},${Species[pokemon.id + 1]},${pokemon.id},${pokemon.formName},${Object.values(pokemon.iv_raw).join(",")},${pokemon.ability},${pokemon.passiveAbility},${pokemon.nature.name},${pokemon.gender},${pokemon.captured}`
+function convertPokemonToCSV(wave: any, pokemon: any, second: boolean): string {
+  return `${wave.id}${second ? "d" : ""},${wave.biome},${Species[pokemon.id + 1]},${pokemon.id},${pokemon.formName},${Object.values(pokemon.iv_raw).join(",")},${pokemon.ability},${pokemon.passiveAbility},${pokemon.nature.name},${pokemon.gender},${pokemon.captured}`;
+}
+
+function convertTrainerToCSV(wave: any, trainer: any): string {
+  return `${wave.id}t,${wave.biome},${trainer.type},${trainer.name}`;
 }
 
 /**
@@ -848,11 +854,6 @@ export function getWave(drpd: DRPD, floor: integer, scene: BattleScene): Wave {
         wv = drpd.waves[i]
         console.log("Found wave for floor " + floor + " at index " + i)
         if (wv.pokemon == undefined) wv.pokemon = []
-        if (wv.double && !scene.currentBattle.double) {
-          // previous log found is a double, but current is single, pop the last entry
-          wv.pokemon.pop();
-          wv.double = scene.currentBattle.double;
-        }
         return wv;
       }
     } else if (insertPos == undefined) {
@@ -1849,7 +1850,11 @@ export function logPokemon(scene: BattleScene, floor: integer = scene.currentBat
   }
   if (pk.rarity == undefined)
     pk.rarity = "[Unknown]"
+  if (scene.currentBattle.enemyParty.length == 1 && wv.pokemon.length >= 2) {
+    wv.pokemon = []
+  }
   wv.pokemon[slot] = pk;
+  wv.double = scene.currentBattle.double;
   //while (wv.actions.length > 0)
     //wv.actions.pop()
   //wv.actions = []
