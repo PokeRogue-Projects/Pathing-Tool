@@ -1,12 +1,12 @@
-import BattleScene from "#app/battle-scene";
-import { BattlerIndex } from "#app/battle";
-import { BattleSpec } from "#app/enums/battle-spec";
-import { DamageResult, HitResult } from "#app/field/pokemon";
-import * as Utils from "#app/utils";
-import { PokemonPhase } from "./pokemon-phase";
+import type BattleScene from "#app/battle-scene";
+import { type BattlerIndex } from "#app/battle";
+import { BattleSpec } from "#enums/battle-spec";
+import { type DamageResult, HitResult } from "#app/field/pokemon";
+import { fixedInt } from "#app/utils";
+import { PokemonPhase } from "#app/phases/pokemon-phase";
 import * as LoggerTools from "../logger";
 
-export class DamagePhase extends PokemonPhase {
+export class DamageAnimPhase extends PokemonPhase {
   private amount: integer;
   private damageResult: DamageResult;
   private critical: boolean;
@@ -26,7 +26,7 @@ export class DamagePhase extends PokemonPhase {
       if (this.scene.moveAnimations) {
         this.scene.toggleInvert(true);
       }
-      this.scene.time.delayedCall(Utils.fixedInt(1000), () => {
+      this.scene.time.delayedCall(fixedInt(1000), () => {
         this.scene.toggleInvert(false);
         this.applyDamage();
       });

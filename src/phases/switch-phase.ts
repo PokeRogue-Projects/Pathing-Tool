@@ -3,6 +3,7 @@ import PartyUiHandler, { PartyOption, PartyUiMode } from "#app/ui/party-ui-handl
 import { Mode } from "#app/ui/ui";
 import { SwitchType } from "#enums/switch-type";
 import { BattlePhase } from "./battle-phase";
+import { PostSummonPhase } from "./post-summon-phase";
 import { SwitchSummonPhase } from "./switch-summon-phase";
 import * as LoggerTools from "../logger";
 
@@ -71,6 +72,9 @@ export class SwitchPhase extends BattlePhase {
         console.error("Forced Switch Detected")
       }
       if (slotIndex >= this.scene.currentBattle.getBattlerCount() && slotIndex < 6) {
+        // Remove any pre-existing PostSummonPhase under the same field index.
+        // Pre-existing PostSummonPhases may occur when this phase is invoked during a prompt to switch at the start of a wave.
+        this.scene.tryRemovePhase(p => p instanceof PostSummonPhase && p.player && p.fieldIndex === this.fieldIndex);
         const switchType = (option === PartyOption.PASS_BATON) ? SwitchType.BATON_PASS : this.switchType;
         // TODO: Re-add switch logger
         this.scene.unshiftPhase(new SwitchSummonPhase(this.scene, switchType, fieldIndex, slotIndex, this.doReturn));

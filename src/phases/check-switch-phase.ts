@@ -5,7 +5,6 @@ import { getPokemonNameWithAffix } from "#app/messages";
 import { Mode } from "#app/ui/ui";
 import i18next from "i18next";
 import { BattlePhase } from "./battle-phase";
-import { PostSummonPhase } from "./post-summon-phase";
 import { SummonMissingPhase } from "./summon-missing-phase";
 import { SwitchPhase } from "./switch-phase";
 import { getNatureName } from "#app/data/nature";
@@ -82,7 +81,6 @@ if (iv == 31) maxIVs.push(ivnames[j])
         // Yes, I want to Pre-Switch
         this.scene.ui.setMode(Mode.MESSAGE);
         LoggerTools.isPreSwitch.value = true
-        this.scene.tryRemovePhase(p => p instanceof PostSummonPhase && p.player && p.fieldIndex === this.fieldIndex);
         this.scene.unshiftPhase(new SwitchPhase(this.scene, SwitchType.INITIAL_SWITCH, this.fieldIndex, false, true));
         for (var i = 0; i < this.scene.getEnemyField().length; i++) {
           this.scene.getEnemyField()[i].getBattleInfo().flyoutMenu.toggleFlyout(false)
