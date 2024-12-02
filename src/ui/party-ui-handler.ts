@@ -430,7 +430,7 @@ export default class PartyUiHandler extends MessageUiHandler {
               if (option === PartyOption.TRANSFER) {
                 if (this.transferCursor !== this.cursor) {
                   if (this.transferAll) {
-                    getTransferrableItemsFromPokemon(this.scene.getPlayerParty()[this.transferCursor]).forEach((_, i) => (this.selectCallback as PartyModifierTransferSelectCallback)(this.transferCursor, i, this.transferQuantitiesMax[i], this.cursor));
+                    getTransferrableItemsFromPokemon(this.scene.getPlayerParty()[this.transferCursor]).forEach((_, i) => (this.selectCallback as PartyModifierTransferSelectCallback)(this.transferCursor, i, this.transferQuantitiesMax[i], this.cursor, true));
                   } else {
                     (this.selectCallback as PartyModifierTransferSelectCallback)(this.transferCursor, this.transferOptionCursor, this.transferQuantities[this.transferOptionCursor], this.cursor);
                   }
@@ -1060,6 +1060,8 @@ export default class PartyUiHandler extends MessageUiHandler {
   clearTransfer(): void {
     this.transferMode = false;
     this.transferAll = false;
+    LoggerTools.isTransferAll.value = false;
+
     this.partySlots[this.transferCursor].setTransfer(false);
     for (let i = 0; i < this.partySlots.length; i++) {
       this.partySlots[i].slotDescriptionLabel.setVisible(false);
