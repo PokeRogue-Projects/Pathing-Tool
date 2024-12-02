@@ -177,12 +177,22 @@ export class SelectModifierPhase extends BattlePhase {
               }
               break;
             case 1:
-              this.scene.ui.setModeWithoutClear(Mode.PARTY, PartyUiMode.MODIFIER_TRANSFER, -1, (fromSlotIndex: integer, itemIndex: integer, itemQuantity: integer, toSlotIndex: integer) => {
+              this.scene.ui.setModeWithoutClear(Mode.PARTY, PartyUiMode.MODIFIER_TRANSFER, -1, (fromSlotIndex: integer, itemIndex: integer, itemQuantity: integer, toSlotIndex: integer, isAll: boolean) => {
                 if (toSlotIndex !== undefined && fromSlotIndex < 6 && toSlotIndex < 6 && fromSlotIndex !== toSlotIndex && itemIndex > -1) {
                   const itemModifiers = this.scene.findModifiers(m => m instanceof PokemonHeldItemModifier
                       && m.isTransferable && m.pokemonId === party[fromSlotIndex].id) as PokemonHeldItemModifier[];
                   const itemModifier = itemModifiers[itemIndex];
-                  this.scene.tryTransferHeldItemModifier(itemModifier, party[toSlotIndex], true, itemQuantity, undefined, undefined, false);
+                  this.scene.tryTransferHeldItemModifier(itemModifier, party[toSlotIndex], true, itemQuantity, undefined, undefined, false)
+                    .then(succeed => {
+                      if (!LoggerTools.isTransferAll.value && succeed) {
+                        if (isAll) {
+                          LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `Transfer ALL | ${party[fromSlotIndex].name} > ${party[toSlotIndex].name}`)
+                          LoggerTools.isTransferAll.value = true
+                        } else {
+                          LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `Transfer ${itemQuantity > 1 ? itemQuantity + " " : ""}${itemModifier.type.name} | ${party[fromSlotIndex].name} > ${party[toSlotIndex].name}`)
+                        }
+                      }
+                    });
                 } else {
                   this.scene.ui.setMode(Mode.MODIFIER_SELECT, this.isPlayer(), this.typeOptions, modifierSelectCallback, this.getRerollCost(this.scene.lockModifierTiers));
                 }
@@ -274,11 +284,12 @@ export class SelectModifierPhase extends BattlePhase {
         }
       };
 
+      const rerollText = (this.rerollCount > 0 ? (this.rerollCount > 1 ? `Reroll x${this.rerollCount} > ` : "Reroll > ") : "");
       if (modifierType! instanceof PokemonModifierType) { //TODO: is the bang correct?
         if (modifierType instanceof FusePokemonModifierType) {
           this.scene.ui.setModeWithoutClear(Mode.PARTY, PartyUiMode.SPLICE, -1, (fromSlotIndex: integer, spliceSlotIndex: integer) => {
             if (spliceSlotIndex !== undefined && fromSlotIndex < 6 && spliceSlotIndex < 6 && fromSlotIndex !== spliceSlotIndex) {
-              LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, modifierType.name + " → " + this.scene.getPlayerParty()[fromSlotIndex].name + " + " + this.scene.getPlayerParty()[spliceSlotIndex].name);
+              LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, rerollText + modifierType.name + " → " + this.scene.getPlayerParty()[fromSlotIndex].name + " + " + this.scene.getPlayerParty()[spliceSlotIndex].name);
               this.scene.ui.setMode(Mode.MODIFIER_SELECT, this.isPlayer()).then(() => {
                 const modifier = modifierType.newModifier(party[fromSlotIndex], party[spliceSlotIndex])!; //TODO: is the bang correct?
                 applyModifier(modifier, true);
@@ -309,13 +320,13 @@ export class SelectModifierPhase extends BattlePhase {
                     : modifierType.newModifier(party[slotIndex], option as integer)
                   : modifierType.newModifier(party[slotIndex], option - PartyOption.MOVE_1);
                 if (isPpRestoreModifier) {
-                  LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, modifierType.name + " → " + this.scene.getPlayerParty()[slotIndex].name + " → " + this.scene.getPlayerParty()[slotIndex].moveset[option - PartyOption.MOVE_1]!.getName());
+                  LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, rerollText + modifierType.name + " > " + this.scene.getPlayerParty()[slotIndex].name + " > " + this.scene.getPlayerParty()[slotIndex].moveset[option - PartyOption.MOVE_1]!.getName());
                 } else if (isRememberMoveModifier) {
-                  LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, modifierType.name + " → " + this.scene.getPlayerParty()[slotIndex].name);
+                  LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, rerollText + modifierType.name + " > " + this.scene.getPlayerParty()[slotIndex].name);
                 } else if (isTmModifier) {
-                  LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, modifierType.name + " → " + this.scene.getPlayerParty()[slotIndex].name);
+                  LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, rerollText + modifierType.name + " > " + this.scene.getPlayerParty()[slotIndex].name);
                 } else {
-                  LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, modifierType.name + " → " + this.scene.getPlayerParty()[slotIndex].name);
+                  LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, rerollText + modifierType.name + " > " + this.scene.getPlayerParty()[slotIndex].name);
                 }
                 applyModifier(modifier!, true); // TODO: is the bang correct?
               });
@@ -325,7 +336,7 @@ export class SelectModifierPhase extends BattlePhase {
           }, pokemonModifierType.selectFilter, modifierType instanceof PokemonMoveModifierType ? (modifierType as PokemonMoveModifierType).moveSelectFilter : undefined, tmMoveId, isPpRestoreModifier);
         }
       } else {
-        LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, modifierType!.name);
+        LoggerTools.logShop(this.scene, this.scene.currentBattle.waveIndex, rerollText + modifierType!.name);
         applyModifier(modifierType!.newModifier()!); // TODO: is the bang correct?
       }
 

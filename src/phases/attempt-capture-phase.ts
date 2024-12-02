@@ -311,7 +311,7 @@ export class AttemptCapturePhase extends PokemonPhase {
                 }, undefined, undefined, undefined, undefined, pokemon.name);
               }, () => {
                 // NO
-                LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, "Don't keep " + pokemon.name);
+                LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, "Do Not Keep " + pokemon.name);
                 this.scene.ui.setMode(Mode.MESSAGE).then(() => {
                   removePokemon();
                   end();

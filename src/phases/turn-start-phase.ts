@@ -175,6 +175,9 @@ export class TurnStartPhase extends FieldPhase {
           break;
         case Command.POKEMON:
           const switchType = turnCommand.args?.[0] ? SwitchType.BATON_PASS : SwitchType.SWITCH;
+          if (pokemon.isPlayer()) {
+            LoggerTools.Actions[pokemon.getFieldIndex()] = `Switch ${pokemon.name} to ${this.scene.getPlayerParty()[turnCommand.cursor!].name}`;
+          }
           this.scene.unshiftPhase(new SwitchSummonPhase(this.scene, switchType, pokemon.getFieldIndex(), turnCommand.cursor!, true, pokemon.isPlayer()));
           break;
         case Command.RUN:
@@ -225,7 +228,7 @@ export class TurnStartPhase extends FieldPhase {
       }
       LoggerTools.Actions.shift();
     } // If the left slot isn't doing anything, delete its entry
-    if (LoggerTools.Actions.length > 1 && (LoggerTools.Actions[1] == "" || LoggerTools.Actions[0] == "%SKIP" || LoggerTools.Actions[1] == undefined || LoggerTools.Actions[1] == null)) {
+    if (LoggerTools.Actions.length > 1 && (LoggerTools.Actions[1] == "" || LoggerTools.Actions[1] == "%SKIP" || LoggerTools.Actions[1] == undefined || LoggerTools.Actions[1] == null)) {
       if (LoggerTools.Actions[1] == "") {
         console.error(`Removed second entry (${LoggerTools.Actions[1]}) because it was empty`)
       } else if (LoggerTools.Actions[1] == "%SKIP") {
@@ -235,6 +238,12 @@ export class TurnStartPhase extends FieldPhase {
       }
       LoggerTools.Actions.pop();
     }  // If the right slot isn't doing anything, delete its entry
+
+    // If there is nothing to be logged, end.
+    if (LoggerTools.Actions.length <= 1 && (LoggerTools.Actions[0] == "" || LoggerTools.Actions[0] == "%SKIP" || LoggerTools.Actions[0] == undefined || LoggerTools.Actions[0] == null)) {
+      this.end();
+      return;
+    }
 
     // Log the player's actions
     LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, LoggerTools.Actions.join(" & "));

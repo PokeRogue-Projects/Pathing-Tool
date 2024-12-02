@@ -133,6 +133,9 @@ export class CommandPhase extends FieldPhase {
           playerPokemon.trySelectMove(cursor, args[0] as boolean) ||
           (useStruggle = cursor > -1 && !playerPokemon.getMoveset().filter(m => m?.isUsable(playerPokemon)).length)) {
           const moveId = !useStruggle ? cursor > -1 ? playerPokemon.getMoveset()[cursor]!.moveId : Moves.NONE : Moves.STRUGGLE; // TODO: is the bang correct?
+          if (logCommand) {
+            LoggerTools.Actions[this.fieldIndex] = playerPokemon.getMoveset()[cursor]!.getName();
+          }
           const turnCommand: TurnCommand = { command: Command.FIGHT, cursor: cursor, move: { move: moveId, targets: [], ignorePP: args[0] }, args: args };
           const moveTargets: MoveTargetSet = args.length < 3 ? getMoveTargets(playerPokemon, moveId) : args[2];
           let moveData: PokemonMove | undefined;
@@ -216,7 +219,6 @@ export class CommandPhase extends FieldPhase {
             } else {
               this.scene.currentBattle.turnCommands[this.fieldIndex] = { command: Command.BALL, cursor: cursor };
               this.scene.currentBattle.turnCommands[this.fieldIndex]!.targets = targets;
-              LoggerTools.Actions[this.fieldIndex] = "Ball";
               if (this.fieldIndex) {
                 this.scene.currentBattle.turnCommands[this.fieldIndex - 1]!.skip = true;
               }
