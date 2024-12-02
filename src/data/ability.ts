@@ -137,7 +137,7 @@ export class Ability implements Localizable {
   }
 }
 
-type AbAttrApplyFunc<TAttr extends AbAttr> = (attr: TAttr, passive: boolean) => boolean | Promise<boolean>;
+type AbAttrApplyFunc<TAttr extends AbAttr> = (attr: TAttr, passive: boolean, simulated: boolean) => boolean | Promise<boolean>;
 type AbAttrCondition = (pokemon: Pokemon) => boolean;
 
 // TODO: Can this be improved?
@@ -4880,7 +4880,7 @@ async function applyAbAttrsInternal<TAttr extends AbAttr>(
 
       pokemon.scene.setPhaseQueueSplice();
 
-      let result = applyFunc(attr, passive);
+      let result = applyFunc(attr, passive, simulated);
       // TODO Remove this when promises get reworked
       if (result instanceof Promise) {
         result = await result;
@@ -5241,8 +5241,8 @@ export function applyPostBattleInitAbAttrs(attrType: Constructor<PostBattleInitA
 
 export function applyPreDefendAbAttrs(attrType: Constructor<PreDefendAbAttr>,
   pokemon: Pokemon, attacker: Pokemon, move: Move | null, cancelled: Utils.BooleanHolder | null, simulated: boolean = false, ...args: any[]): Promise<void> {
-  return applyAbAttrsInternal<PreDefendAbAttr>(attrType, pokemon, (attr, passive) => attr.applyPreDefend(pokemon, passive, simulated, attacker, move, cancelled, args), args, false, simulated);
-}
+    return applyAbAttrsInternal<PreDefendAbAttr>(attrType, pokemon, (attr, passive, simulated) => attr.applyPreDefend(pokemon, passive, simulated, attacker, move, cancelled, args), args, false, simulated);
+  }
 
 export function applyPostDefendAbAttrs(attrType: Constructor<PostDefendAbAttr>,
   pokemon: Pokemon, attacker: Pokemon, move: Move, hitResult: HitResult | null, simulated: boolean = false, ...args: any[]): Promise<void> {

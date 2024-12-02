@@ -27,6 +27,7 @@ import { Abilities } from "./enums/abilities";
 import { getBiomeName } from "./data/balance/biomes";
 import { Nature } from "./enums/nature";
 import { StatusEffect } from "./enums/status-effect";
+import { getCriticalCaptureChance } from "./data/pokeball";
 
 /*
 SECTIONS
@@ -70,6 +71,9 @@ export const acceptedVersions = [
   "1.1.0b",
 ]
 
+/** Toggles console messages about catch prediction. */
+const catchDebug: boolean = false;
+
 // Value holders
 /** Holds the encounter rarities for the Pokemon in this wave. */
 export const rarities = []
@@ -89,7 +93,8 @@ export const enemyPlan: string[] = []
 // Booleans
 export const isPreSwitch: Utils.BooleanHolder = new Utils.BooleanHolder(false);
 export const isFaintSwitch: Utils.BooleanHolder = new Utils.BooleanHolder(false);
-export const SheetsMode = new Utils.BooleanHolder(false)
+export const SheetsMode = new Utils.BooleanHolder(false);
+export const isTransferAll: Utils.BooleanHolder = new Utils.BooleanHolder(false);
 
 // #endregion
 
@@ -114,6 +119,50 @@ export function downloadLogByID(i: integer) {
   link.click();
   link.remove();
 }
+/**
+ * Saves a log to your device in an alternate format.
+ * @param i The index of the log you want to save.
+ */
+export function downloadLogByIDToCSV(i: integer) {
+  console.log(i)
+  var d = JSON.parse(localStorage.getItem(logs[i][1])!)
+  var waves = d["waves"];
+  var encounterList: string[] = [];
+  for (var i = 1; i < waves.length; i++) {
+    var wave = waves[i];
+    console.log(wave);
+    if (wave != null && wave.trainer == null) {
+      var pokemon1 = wave.pokemon[0];
+      if (pokemon1 == null) continue;
+      encounterList.push(convertPokemonToCSV(wave, pokemon1, false));
+      if (wave.double) {
+        var pokemon2 = wave.pokemon[1];
+        if (pokemon2 == null) continue;
+        encounterList.push(convertPokemonToCSV(wave, pokemon2, true));
+      }
+    } else if (wave != null) {
+      encounterList.push(convertTrainerToCSV(wave, wave.trainer));
+    }
+  }
+  var encounters = encounterList.join("\n");
+  const blob = new Blob([ encounters ], {type: "text/csv"});
+  const link = document.createElement("a");
+  link.href = window.URL.createObjectURL(blob);
+  var date: string = (d as DRPD).date
+  var filename: string = date[5] + date[6] + "_" + date[8] + date[9] + "_" + date[0] + date[1] + date[2] + date[3] + "_" + (d as DRPD).label + ".csv"
+  link.download = `${filename}`;
+  link.click();
+  link.remove();
+}
+
+function convertPokemonToCSV(wave: any, pokemon: any, second: boolean): string {
+  return `${wave.id}${second ? "d" : ""},${wave.biome},${Species[pokemon.id + 1]},${pokemon.id},${pokemon.formName},${Object.values(pokemon.iv_raw).join(",")},${pokemon.ability},${pokemon.passiveAbility},${pokemon.nature.name},${pokemon.gender},${pokemon.captured}`;
+}
+
+function convertTrainerToCSV(wave: any, trainer: any): string {
+  return `${wave.id}t,${wave.biome},${trainer.type},${trainer.name}`;
+}
+
 /**
  * Saves a log to your device in an alternate format.
  * @param i The index of the log you want to save.
@@ -1028,7 +1077,10 @@ export interface PokeData {
   /** The Pokémon that was used to generate this `PokeData`. Not exported.
    * @see Pokemon
    */
-  source?: Pokemon
+  source?: Pokemon,
+  /*
+   */
+  formName: string
 }
 /**
  * Exports a Pokemon's data as `PokeData`.
@@ -1050,7 +1102,8 @@ export function exportPokemon(pokemon: Pokemon, encounterRarity?: string): PokeD
     level: pokemon.level,
     items: pokemon.getHeldItems().map((item, idx) => exportItem(item)),
     iv_raw: exportIVs(pokemon.ivs),
-    iv: formatIVs(pokemon.ivs)
+    iv: formatIVs(pokemon.ivs),
+    formName: pokemon.species.forms[pokemon.formIndex]?.formName
   }
 }
 /**
@@ -1074,7 +1127,8 @@ export function exportPokemonFromData(pokemon: PokemonData, encounterRarity?: st
     level: pokemon.level,
     items: [],
     iv_raw: exportIVs(pokemon.ivs),
-    iv: formatIVs(pokemon.ivs)
+    iv: formatIVs(pokemon.ivs),
+    formName: "" // pokemon.species.forms[pokemon.formIndex]?.formName // PokemonData doesnt have EnemyPokemon, only species enum
   }
 }
 /**
@@ -1491,6 +1545,12 @@ export function generateEditOption(scene: BattleScene, i: integer, saves: any, p
             phase.callEnd()
           },
           () => {
+            console.log("Export to CSV")
+            scene.ui.playSelect();
+            downloadLogByIDToCSV(i)
+            phase.callEnd()
+          },
+          () => {
             console.log("Export to Sheets")
             scene.ui.playSelect();
             downloadLogByIDToSheet(i)
@@ -1556,6 +1616,12 @@ export function generateEditHandler(scene: BattleScene, logId: string, callback:
           callback()
         },
         () => {
+          console.log("Export to CSV")
+          scene.ui.playSelect();
+          downloadLogByIDToCSV(i)
+          callback()
+        },
+        () => {
           console.log("Export to Sheets")
           scene.ui.playSelect();
           downloadLogByIDToSheet(i)
@@ -1598,6 +1664,12 @@ export function generateEditHandlerForLog(scene: BattleScene, i: integer, callba
           console.log("Export")
           scene.ui.playSelect();
           downloadLogByID(i)
+          callback()
+        },
+        () => {
+          console.log("Export to CSV")
+          scene.ui.playSelect();
+          downloadLogByIDToCSV(i)
           callback()
         },
         () => {
@@ -1779,7 +1851,11 @@ export function logPokemon(scene: BattleScene, floor: integer = scene.currentBat
   }
   if (pk.rarity == undefined)
     pk.rarity = "[Unknown]"
+  if (scene.currentBattle.enemyParty.length == 1 && wv.pokemon.length >= 2) {
+    wv.pokemon = []
+  }
   wv.pokemon[slot] = pk;
+  wv.double = scene.currentBattle.double;
   //while (wv.actions.length > 0)
     //wv.actions.pop()
   //wv.actions = []
@@ -1802,6 +1878,7 @@ export function logShop(scene: BattleScene, floor: integer = scene.currentBattle
   wv.shop = action
   console.log("--> ", drpd)
   localStorage.setItem(getLogID(scene), JSON.stringify(drpd))
+  if (action != "") this.logActions(scene, floor, `Shop: ${action}`)
 }
 /**
  * Logs the current floor's Trainer.
@@ -1976,38 +2053,31 @@ export function runShinyCheck(scene: BattleScene, mode: integer, wv?: integer) {
   }
   return [isOk, minLuck]
 }
-function catchCalc(pokemon: EnemyPokemon) {
-  const _3m = 3 * pokemon.getMaxHp();
-  const _2h = 2 * pokemon.hp;
-  const catchRate = pokemon.species.catchRate;
-  const statusMultiplier = pokemon.status ? getStatusEffectCatchRateMultiplier(pokemon.status.effect) : 1;
-  const rate1 = Math.round(65536 / Math.sqrt(Math.sqrt(255 / (Math.round((((_3m - _2h) * catchRate * 1) / _3m) * statusMultiplier)))));
-  const rate2 = Math.round(65536 / Math.sqrt(Math.sqrt(255 / (Math.round((((_3m - _2h) * catchRate * 1.5) / _3m) * statusMultiplier)))));
-  const rate3 = Math.round(65536 / Math.sqrt(Math.sqrt(255 / (Math.round((((_3m - _2h) * catchRate * 2) / _3m) * statusMultiplier)))));
-  const rate4 = Math.round(65536 / Math.sqrt(Math.sqrt(255 / (Math.round((((_3m - _2h) * catchRate * 3) / _3m) * statusMultiplier)))));
-
-  var rates = [rate1, rate2, rate3, rate4]
-  var rates2 = rates.map(r => ((r/65536) ** 3))
-  //console.log(rates2)
-
-  return rates2
+function generateBallChance(pk: EnemyPokemon, pokeballMultiplier: number) {
+  const _3m = 3 * pk.getMaxHp();
+  const _2h = 2 * pk.hp;
+  const catchRate = pk.species.catchRate;
+  const statusMultiplier = pk.status ? getStatusEffectCatchRateMultiplier(pk.status.effect) : 1;
+  return Math.round(65536 / Math.pow((255 / Math.round((((_3m - _2h) * catchRate * pokeballMultiplier) / _3m) * statusMultiplier)), 0.1875))
 }
-function catchCalcRaw(pokemon: EnemyPokemon) {
-  const _3m = 3 * pokemon.getMaxHp();
-  const _2h = 2 * pokemon.hp;
-  const catchRate = pokemon.species.catchRate;
-  const statusMultiplier = pokemon.status ? getStatusEffectCatchRateMultiplier(pokemon.status.effect) : 1;
-  const rate1 = Math.round(65536 / Math.sqrt(Math.sqrt(255 / (Math.round((((_3m - _2h) * catchRate * 1) / _3m) * statusMultiplier)))));
-  const rate2 = Math.round(65536 / Math.sqrt(Math.sqrt(255 / (Math.round((((_3m - _2h) * catchRate * 1.5) / _3m) * statusMultiplier)))));
-  const rate3 = Math.round(65536 / Math.sqrt(Math.sqrt(255 / (Math.round((((_3m - _2h) * catchRate * 2) / _3m) * statusMultiplier)))));
-  const rate4 = Math.round(65536 / Math.sqrt(Math.sqrt(255 / (Math.round((((_3m - _2h) * catchRate * 3) / _3m) * statusMultiplier)))));
-
-  var rates = [rate1, rate2, rate3, rate4]
-  var rates2 = rates.map(r => ((r/65536) ** 3))
-  //console.log(rates2)
-  //console.log("output: ", rates)
-
-  return rates
+function generateCritChance(pk: EnemyPokemon, pokeballMultiplier: number) {
+  const _3m = 3 * pk.getMaxHp();
+  const _2h = 2 * pk.hp;
+  const catchRate = pk.species.catchRate;
+  const statusMultiplier = pk.status ? getStatusEffectCatchRateMultiplier(pk.status.effect) : 1;
+  return getCriticalCaptureChance(pk.scene, Math.round((((_3m - _2h) * catchRate * pokeballMultiplier) / _3m) * statusMultiplier));
+}
+function catchCalc(pokemon: EnemyPokemon) {
+  var rates = [
+    [generateBallChance(pokemon, 1), 0, generateCritChance(pokemon, 1), 0],
+    [generateBallChance(pokemon, 1.5), 0, generateCritChance(pokemon, 1.5), 1],
+    [generateBallChance(pokemon, 2), 0, generateCritChance(pokemon, 2), 2],
+    [generateBallChance(pokemon, 3), 0, generateCritChance(pokemon, 3), 3]
+  ];
+  for (var i = 0; i < rates.length; i++) {
+    rates[i][1] = (rates[i][0]/65536) ** 3
+  }
+  return rates;
 }
 
 /**
@@ -2018,8 +2088,8 @@ function catchCalcRaw(pokemon: EnemyPokemon) {
  */
 export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: boolean) {
   var rates = catchCalc(pokemon)
-  var rates_raw = catchCalcRaw(pokemon)
   var rolls = []
+  var critCap = []
   var offset = 0
   scene.getModifiers(BypassSpeedChanceModifier, true).forEach(m => {
     //console.log(m, m.getPokemon(this.scene), pokemon)
@@ -2031,17 +2101,23 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
       }
     })
   })
+  scene.currentBattle.multiInt(scene, critCap, offset + 1, 256, undefined, "Critical Capture Check")
+  offset++
   scene.currentBattle.multiInt(scene, rolls, offset + 3, 65536, undefined, "Catch prediction")
   //console.log(rolls)
   //console.log(rolls.slice(offset, offset + 3))
-  if (scene.pokeballCounts[0] == 0 && !override) rates[0] = 0
-  if (scene.pokeballCounts[1] == 0 && !override) rates[1] = 0
-  if (scene.pokeballCounts[2] == 0 && !override) rates[2] = 0
-  if (scene.pokeballCounts[3] == 0 && !override) rates[3] = 0
-  var rates2 = rates.slice()
-  rates2.sort(function(a, b) {
-return b - a
-})
+  if (scene.pokeballCounts[0] == 0 && !override) rates[0][0] = 0
+  if (scene.pokeballCounts[1] == 0 && !override) rates[1][0] = 0
+  if (scene.pokeballCounts[2] == 0 && !override) rates[2][0] = 0
+  if (scene.pokeballCounts[3] == 0 && !override) rates[3][0] = 0
+  console.log("Rate data [raw rate, % odds of success, crit rate, idx]")
+  for (var i = 0; i < rates.length; i++) {
+    console.log(rates[i])
+  }
+  console.log("Note: if middle number is less than " + critCap[0] + ", a critical capture should occur")
+  rates.sort(function(a, b) {
+    return b[0] - a[0]
+  })
   const ballNames = [
     "Poké Ball",
     "Great Ball",
@@ -2050,63 +2126,47 @@ return b - a
     "Master Ball"
   ]
   var func_output = ""
-  rates_raw.forEach((v, i) => {
-    if (scene.pokeballCounts[i] == 0 && !override)
+  rates.forEach((v, i) => {
+    if (catchDebug) console.log("Ball: " + ballNames[v[3]], v)
+    var rawRate = v[0]
+    var catchRate = v[1]
+    var critRate = v[2]
+    if (scene.pokeballCounts[i] == 0 && !override) {
+      if (catchDebug) console.log("  Skipped because the player doesn't have any of this ball")
       return; // Don't list success for Poke Balls we don't have
+    }
     //console.log(ballNames[i])
     //console.log(v, rolls[offset + 0], v > rolls[offset + 0])
     //console.log(v, rolls[offset + 1], v > rolls[offset + 1])
     //console.log(v, rolls[offset + 2], v > rolls[offset + 2])
-    if (v > rolls[offset + 0]) {
+    if (catchDebug) console.log(`  Critical capture requirement: (${critCap[0]} < ${critRate})`)
+    if (rawRate > rolls[offset + 0]) {
+      if (catchDebug) console.log(`  Passed roll 1 (${rolls[offset + 0]} < ${rawRate})`)
       //console.log("1 roll")
-      if (v > rolls[offset + 1]) {
+      if (critCap[0] < critRate) {
+        func_output = ballNames[v[3]] + " crits"
+        if (catchDebug) console.log(`  Critical capture triggered (${critCap[0]} < ${critRate}) - ended early`)
+      } else if (rawRate > rolls[offset + 1]) {
         //console.log("2 roll")
-        if (v > rolls[offset + 2]) {
+        if (catchDebug) console.log(`  Passed roll 2 (${rolls[offset + 1]} < ${rawRate} )`)
+        if (rawRate > rolls[offset + 2]) {
           //console.log("Caught!")
-          if (func_output == "") {
-            func_output = ballNames[i] + " catches"
-          }
+          if (catchDebug) console.log(`  Passed roll 3 (${rolls[offset + 2]} < ${rawRate} ) - capture successful`)
+          func_output = ballNames[v[3]] + " catches"
+        } else {
+          if (catchDebug) console.log(`  Failed roll 3 (checked for ${rolls[offset + 2]} < ${rawRate})`)
         }
+      } else {
+        if (catchDebug) console.log(`  Failed roll 2 (checked for ${rolls[offset + 1]} < ${rawRate})`)
       }
-    }
-    if (v > rolls[offset] && v > rolls[1 + offset] && v > rolls[2 + offset]) {
-      if (func_output == "") {
-        func_output = ballNames[i] + " catches"
-      }
+    } else {
+      if (catchDebug) console.log(`  Failed roll 1 (checked for ${rolls[offset + 0]} < ${rawRate})`)
     }
   })
   if (func_output != "") {
-    return func_output
+    return func_output;
   }
-  return "Can't catch"
-  var n = ""
-  switch (rates2[0]) {
-    case rates[0]:
-      // Poke Balls are best
-      n = "Poké Ball "
-      break;
-    case rates[1]:
-      // Great Balls are best
-      n = "Great Ball "
-      break;
-    case rates[2]:
-      // Ultra Balls are best
-      n = "Ultra Ball "
-      break;
-    case rates[3]:
-      // Rogue Balls are best
-      n = "Rogue Ball "
-      break;
-    default:
-      // Master Balls are the only thing that will work
-      if (scene.pokeballCounts[4] != 0 || override) {
-        return "Master Ball";
-      } else {
-        return "No balls"
-      }
-  }
-  return n + " (FAIL)"
-  return n + Math.round(rates2[0] * 100) + "%";
+  return "---";
 }
 export function parseSlotData(slotId: integer): SessionSaveData | undefined {
   var S = localStorage.getItem(`sessionData${slotId ? slotId : ""}_${loggedInUser?.username}`)

@@ -124,6 +124,7 @@ export class LearnMovePhase extends PlayerPartyMemberPokemonPhase {
     await this.scene.ui.showTextPromise(i18next.t("battle:learnMoveStopTeaching", { moveName: move.name }), undefined, false);
     this.scene.ui.setModeWithoutClear(Mode.CONFIRM,
       () => {
+        LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `Skip ${move.name}`);
         this.scene.ui.setMode(this.messageMode);
         this.scene.ui.showTextPromise(i18next.t("battle:learnMoveNotLearned", { pokemonName: getPokemonNameWithAffix(pokemon), moveName: move.name }), undefined, true).then(() => this.end());
       },
@@ -168,6 +169,7 @@ export class LearnMovePhase extends PlayerPartyMemberPokemonPhase {
         this.scene.tryRemovePhase((phase) => phase instanceof SelectModifierPhase);
       }
     }
+    LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `${pokemon.name} | ${move.name} > ${pokemon.moveset[index]?.getName()}`);
     pokemon.setMove(index, this.moveId);
     initMoveAnim(this.scene, this.moveId).then(() => {
       loadMoveAnimAssets(this.scene, [ this.moveId ], true);

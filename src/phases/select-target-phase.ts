@@ -32,11 +32,27 @@ export class SelectTargetPhase extends PokemonPhase {
       // Cancel this action
       if (targets.length < 1) {
         this.scene.currentBattle.turnCommands[this.fieldIndex] = null;
-        //LoggerTools.Actions[this.fieldIndex] = "";
+        LoggerTools.Actions[this.fieldIndex] = "";
         this.scene.unshiftPhase(new CommandPhase(this.scene, this.fieldIndex));
       } else {
         turnCommand!.targets = targets; //TODO: is the bang correct here?
-        //LoggerTools.Actions[this.fieldIndex] += " " + this.formatTargets(targets, this.fieldIndex)
+        if (targets.length == 1) {
+          switch (targets[0]) {
+            case 0:
+            case 1:
+              // Specify clearly that you target your own pokemon
+              LoggerTools.Actions[this.fieldIndex] += ` ${fieldSide[this.fieldIndex]}`;
+              break;
+            case 2:
+              // Just specify L or R
+              LoggerTools.Actions[this.fieldIndex] += ` L`;
+              break;
+            case 3:
+              // Just specify L or R
+              LoggerTools.Actions[this.fieldIndex] += ` R`;
+              break;
+          }
+        }
       }
       if (turnCommand?.command === Command.BALL && this.fieldIndex) {
         this.scene.currentBattle.turnCommands[this.fieldIndex - 1]!.skip = true; //TODO: is the bang correct here?

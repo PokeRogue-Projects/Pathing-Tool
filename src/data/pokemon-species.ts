@@ -794,9 +794,11 @@ export default class PokemonSpecies extends PokemonSpeciesForm implements Locali
     }
 
     if (noEvolutionChance === 1 || Phaser.Math.RND.realInRange(0, 1) < noEvolutionChance) {
+      console.log(`No evolution, chance to evolve was ${noEvolutionChance * 100}%`);
       return this.speciesId;
     }
 
+    console.log(`Evolution, chance to evolve was ${noEvolutionChance * 100}%`);
     const randValue = evolutionPool.size === 1 ? 0 : Utils.randSeedInt(totalWeight, undefined, "Random levelled species");
 
     for (const weight of evolutionPool.keys()) {

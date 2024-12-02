@@ -139,13 +139,13 @@ export class AttemptCapturePhase extends PokemonPhase {
                     this.failCatch(shakeCount);
                   } else if (shakeCount++ < (isCritical ? 1 : 3)) {
                     // Shake check (skip check for critical or guaranteed captures, but still play the sound)
-                    if (pokeballMultiplier === -1 || isCritical || modifiedCatchRate >= 255 || pokemon.randSeedInt(65536, undefined, "Capture roll") < shakeProbability) {
+                    if (pokeballMultiplier === -1 || isCritical || modifiedCatchRate >= 255 || this.roll(shakeProbability) < shakeProbability) {
                       this.scene.playSound("se/pb_move");
                     } else {
                       shakeCounter.stop();
                       this.failCatch(shakeCount);
                     }
-                  } else if (isCritical && pokemon.randSeedInt(65536) >= shakeProbability) {
+                  } else if (isCritical && this.roll(shakeProbability) >= shakeProbability) {
                     // Above, perform the one shake check for critical captures after the ball shakes once
                     shakeCounter.stop();
                     this.failCatch(shakeCount);
@@ -311,7 +311,7 @@ export class AttemptCapturePhase extends PokemonPhase {
                 }, undefined, undefined, undefined, undefined, pokemon.name);
               }, () => {
                 // NO
-                LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, "Don't keep " + pokemon.name);
+                LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, "Do Not Keep " + pokemon.name);
                 this.scene.ui.setMode(Mode.MESSAGE).then(() => {
                   removePokemon();
                   end();
