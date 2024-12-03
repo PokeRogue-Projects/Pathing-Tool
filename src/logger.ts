@@ -28,6 +28,7 @@ import { getBiomeName } from "./data/balance/biomes";
 import { Nature } from "./enums/nature";
 import { StatusEffect } from "./enums/status-effect";
 import { getCriticalCaptureChance } from "./data/pokeball";
+import { join } from "path";
 
 /*
 SECTIONS
@@ -154,11 +155,11 @@ export function downloadLogByIDToCSV(i: integer) {
 }
 
 function convertPokemonToCSV(wave: any, pokemon: any, second: boolean): string {
-  return `${wave.id}${second ? "d" : ""},${wave.biome},${Species[pokemon.id + 1]},${pokemon.id},${pokemon.formName},${Object.values(pokemon.iv_raw).join(",")},${pokemon.ability},${pokemon.passiveAbility},${pokemon.nature.name},${pokemon.gender},${pokemon.captured}`;
+  return `${wave.id}${second ? "d" : ""},${wave.biome},${Species[pokemon.id + 1]},${pokemon.id},${pokemon.formName},${Object.values(pokemon.iv_raw).join(",")},${pokemon.ability},${pokemon.passiveAbility},${pokemon.nature.name},${pokemon.gender},${pokemon.captured},${wave.actions.join(";")}`;
 }
 
 function convertTrainerToCSV(wave: any, trainer: any): string {
-  return `${wave.id}t,${wave.biome},${trainer.type},${trainer.name}`;
+  return `${wave.id}t,${wave.biome},${trainer.type},${trainer.name},,,,,,,,${wave.actions.join(";")}`;
 }
 
 /**
