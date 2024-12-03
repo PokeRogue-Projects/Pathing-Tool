@@ -353,7 +353,7 @@ export default class PartyUiHandler extends MessageUiHandler {
         const pokemon = this.scene.getPlayerParty()[this.cursor];
         if (option === PartyOption.RELEASE) {
           if (this.incomingMon != undefined) {
-            LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `Add ${this.incomingMon}, replacing ${this.scene.getPlayerParty()[this.cursor].name} (Slot ${this.cursor + 1})`)
+            LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `${this.incomingMon} > ${this.scene.getPlayerParty()[this.cursor].name} (Slot ${this.cursor + 1})`)
           } else {
             LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `Release ${this.scene.getPlayerParty()[this.cursor].name} (Slot ${this.cursor + 1})`)
           }
