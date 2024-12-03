@@ -81,7 +81,6 @@ if (iv == 31) maxIVs.push(ivnames[j])
       this.scene.ui.setMode(Mode.CONFIRM, () => {
         // Yes, I want to Pre-Switch
         this.scene.ui.setMode(Mode.MESSAGE);
-        LoggerTools.isPreSwitch.value = true
         this.scene.tryRemovePhase(p => p instanceof PostSummonPhase && p.player && p.fieldIndex === this.fieldIndex);
         this.scene.unshiftPhase(new SwitchPhase(this.scene, SwitchType.INITIAL_SWITCH, this.fieldIndex, false, true));
         for (var i = 0; i < this.scene.getEnemyField().length; i++) {

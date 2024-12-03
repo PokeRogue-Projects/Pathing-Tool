@@ -91,8 +91,6 @@ export const Actions: string[] = []
 export const enemyPlan: string[] = []
 
 // Booleans
-export const isPreSwitch: Utils.BooleanHolder = new Utils.BooleanHolder(false);
-export const isFaintSwitch: Utils.BooleanHolder = new Utils.BooleanHolder(false);
 export const SheetsMode = new Utils.BooleanHolder(false);
 export const isTransferAll: Utils.BooleanHolder = new Utils.BooleanHolder(false);
 
