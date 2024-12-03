@@ -28,7 +28,6 @@ import { getBiomeName } from "./data/balance/biomes";
 import { Nature } from "./enums/nature";
 import { StatusEffect } from "./enums/status-effect";
 import { getCriticalCaptureChance } from "./data/pokeball";
-import { join } from "path";
 
 /*
 SECTIONS
