@@ -339,7 +339,7 @@ export class EncounterPhase extends BattlePhase {
     }
     LoggerTools.resetWaveActions(this.scene, undefined, true);
     if (this.scene.currentBattle.waveIndex % 10 == 1) {
-      LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `RELOAD THE GAME (F5)`);
+      LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `RELOAD YOUR GAME (F5)`);
     }
 
     //this.scene.doShinyCheck()
