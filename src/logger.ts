@@ -1101,7 +1101,7 @@ export function exportPokemon(pokemon: Pokemon, encounterRarity?: string): PokeD
     items: pokemon.getHeldItems().map((item, idx) => exportItem(item)),
     iv_raw: exportIVs(pokemon.ivs),
     iv: formatIVs(pokemon.ivs),
-    formName: pokemon.species.forms[pokemon.formIndex]?.formName
+    formName: pokemon.getSpeciesForm().getSpriteAtlasPath(pokemon.gender == 1, pokemon.formIndex)
   }
 }
 /**
