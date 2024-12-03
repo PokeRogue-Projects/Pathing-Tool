@@ -159,7 +159,7 @@ function convertPokemonToCSV(wave: any, pokemon: any, second: boolean): string {
 }
 
 function convertTrainerToCSV(wave: any, trainer: any): string {
-  return `${wave.id}t,${wave.biome},${trainer.type},${trainer.name},,,,,,,,${wave.actions.join(";")}`;
+  return `${wave.id}t,${wave.biome},${trainer.type},${trainer.name},,,,,,,,,,,,,${wave.actions.join(";")}`;
 }
 
 /**
