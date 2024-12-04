@@ -91,8 +91,6 @@ export const Actions: string[] = []
 export const enemyPlan: string[] = []
 
 // Booleans
-export const isPreSwitch: Utils.BooleanHolder = new Utils.BooleanHolder(false);
-export const isFaintSwitch: Utils.BooleanHolder = new Utils.BooleanHolder(false);
 export const SheetsMode = new Utils.BooleanHolder(false);
 export const isTransferAll: Utils.BooleanHolder = new Utils.BooleanHolder(false);
 
@@ -156,11 +154,11 @@ export function downloadLogByIDToCSV(i: integer) {
 }
 
 function convertPokemonToCSV(wave: any, pokemon: any, second: boolean): string {
-  return `${wave.id}${second ? "d" : ""},${wave.biome},${Species[pokemon.id + 1]},${pokemon.id},${pokemon.formName},${Object.values(pokemon.iv_raw).join(",")},${pokemon.ability},${pokemon.passiveAbility},${pokemon.nature.name},${pokemon.gender},${pokemon.captured}`;
+  return `${wave.id}${second ? "d" : ""},${wave.biome},${Species[pokemon.id + 1]},${pokemon.id},${pokemon.formName},${Object.values(pokemon.iv_raw).join(",")},${pokemon.ability},${pokemon.passiveAbility},${pokemon.nature.name},${pokemon.gender},${pokemon.captured},${wave.actions.join(";")}`;
 }
 
 function convertTrainerToCSV(wave: any, trainer: any): string {
-  return `${wave.id}t,${wave.biome},${trainer.type},${trainer.name}`;
+  return `${wave.id}t,${wave.biome},${trainer.type},${trainer.name},,,,,,,,,,,,,${wave.actions.join(";")}`;
 }
 
 /**
@@ -1103,7 +1101,7 @@ export function exportPokemon(pokemon: Pokemon, encounterRarity?: string): PokeD
     items: pokemon.getHeldItems().map((item, idx) => exportItem(item)),
     iv_raw: exportIVs(pokemon.ivs),
     iv: formatIVs(pokemon.ivs),
-    formName: pokemon.species.forms[pokemon.formIndex]?.formName
+    formName: pokemon.getSpeciesForm().getSpriteAtlasPath(pokemon.gender == 1, pokemon.formIndex)
   }
 }
 /**

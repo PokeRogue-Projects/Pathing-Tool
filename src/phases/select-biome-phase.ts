@@ -25,7 +25,6 @@ export class SelectBiomePhase extends BattlePhase {
         this.scene.applyModifiers(MoneyInterestModifier, true, this.scene);
         this.scene.unshiftPhase(new PartyHealPhase(this.scene, false));
       }
-      LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex - 1, `Go to ${getBiomeName(nextBiome)}`);
       this.scene.unshiftPhase(new SwitchBiomePhase(this.scene, nextBiome));
       this.end();
     };
@@ -57,6 +56,7 @@ export class SelectBiomePhase extends BattlePhase {
             label: getBiomeName(b),
             handler: () => {
               this.scene.ui.setMode(Mode.MESSAGE);
+              LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex - 1, `Go to ${getBiomeName(b)}`);
               setNextBiome(b);
               return true;
             }

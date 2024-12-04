@@ -105,9 +105,8 @@ export class SwitchSummonPhase extends SummonPhase {
     const party = this.player ? this.getParty() : this.scene.getEnemyParty();
     const switchedInPokemon = party[this.slotIndex];
     this.lastPokemon = this.getPokemon();
-    if (this.player && LoggerTools.isPreSwitch.value) {
+    if (this.player && this.switchType === SwitchType.INITIAL_SWITCH) {
       LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `Pre-Switch ${this.lastPokemon.name} to ${switchedInPokemon.name}`);
-      LoggerTools.isPreSwitch.value = false;
     }
 
     applyPreSwitchOutAbAttrs(PreSwitchOutAbAttr, this.lastPokemon);
