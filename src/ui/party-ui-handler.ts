@@ -351,13 +351,6 @@ export default class PartyUiHandler extends MessageUiHandler {
       const option = this.options[this.optionsCursor];
       if (button === Button.ACTION) {
         const pokemon = this.scene.getPlayerParty()[this.cursor];
-        if (option === PartyOption.RELEASE) {
-          if (this.incomingMon != undefined) {
-            LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `${this.incomingMon} > ${this.scene.getPlayerParty()[this.cursor].name} (Slot ${this.cursor + 1})`)
-          } else {
-            LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `Release ${this.scene.getPlayerParty()[this.cursor].name} (Slot ${this.cursor + 1})`)
-          }
-        }
         if (this.partyUiMode === PartyUiMode.MODIFIER_TRANSFER && !this.transferMode && option !== PartyOption.CANCEL) {
           this.startTransfer();
 
@@ -1072,6 +1065,12 @@ export default class PartyUiHandler extends MessageUiHandler {
   }
 
   doRelease(slotIndex: integer): void {
+    if (this.incomingMon != undefined) {
+      LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `${this.incomingMon} > ${this.scene.getPlayerParty()[this.cursor].name} (Slot ${this.cursor + 1})`)
+    } else {
+      LoggerTools.logActions(this.scene, this.scene.currentBattle.waveIndex, `Release ${this.scene.getPlayerParty()[this.cursor].name} (Slot ${this.cursor + 1})`)
+    }
+
     this.showText(this.getReleaseMessage(getPokemonNameWithAffix(this.scene.getPlayerParty()[slotIndex])), null, () => {
       this.clearPartySlots();
       this.scene.removePartyMemberModifiers(slotIndex);
