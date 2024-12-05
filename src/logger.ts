@@ -126,9 +126,9 @@ export function downloadLogByIDToCSV(i: integer) {
   var d = JSON.parse(localStorage.getItem(logs[i][1])!)
   var waves = d["waves"];
   var encounterList: string[] = [];
-  encounterList.push(convertPokemonToCSV(waves[0], d.starters[0], false));
-  encounterList.push(convertPokemonToCSV(waves[0], d.starters[1], false));
-  encounterList.push(convertPokemonToCSV(waves[0], d.starters[2], false));
+  encounterList.push(convertPokemonToCSV({"id": "a", "biome": waves[0].biome, "actions": []}, d.starters[0], false));
+  encounterList.push(convertPokemonToCSV({"id": "b", "biome": waves[0].biome, "actions": []}, d.starters[1], false));
+  encounterList.push(convertPokemonToCSV({"id": "c", "biome": waves[0].biome, "actions": []}, d.starters[2], false));
 
   for (var i = 1; i < waves.length; i++) {
     var wave = waves[i];
