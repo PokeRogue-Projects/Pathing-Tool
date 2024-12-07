@@ -126,6 +126,10 @@ export function downloadLogByIDToCSV(i: integer) {
   var d = JSON.parse(localStorage.getItem(logs[i][1])!)
   var waves = d["waves"];
   var encounterList: string[] = [];
+  encounterList.push(convertPokemonToCSV({"id": "a", "biome": waves[0].biome, "actions": []}, d.starters[0], false));
+  encounterList.push(convertPokemonToCSV({"id": "b", "biome": waves[0].biome, "actions": []}, d.starters[1], false));
+  encounterList.push(convertPokemonToCSV({"id": "c", "biome": waves[0].biome, "actions": []}, d.starters[2], false));
+
   for (var i = 1; i < waves.length; i++) {
     var wave = waves[i];
     console.log(wave);
@@ -154,7 +158,7 @@ export function downloadLogByIDToCSV(i: integer) {
 }
 
 function convertPokemonToCSV(wave: any, pokemon: any, second: boolean): string {
-  return `${wave.id}${second ? "d" : ""},${wave.biome},${Species[pokemon.id + 1]},${pokemon.id},${pokemon.formName},${Object.values(pokemon.iv_raw).join(",")},${pokemon.ability},${pokemon.passiveAbility},${pokemon.nature.name},${pokemon.gender},${pokemon.captured},${wave.actions.join(";")}`;
+  return `${wave.id}${second ? "d" : ""},${wave.biome},${pokemon.id > 1025 ? Species[pokemon.formName] : Species[pokemon.id + 1]},${pokemon.id},${pokemon.formName},${Object.values(pokemon.iv_raw).join(",")},${pokemon.ability},${pokemon.passiveAbility},${pokemon.nature.name},${pokemon.gender},${pokemon.captured},${second ? "" : wave.actions.join(";")}`;
 }
 
 function convertTrainerToCSV(wave: any, trainer: any): string {
@@ -1101,7 +1105,7 @@ export function exportPokemon(pokemon: Pokemon, encounterRarity?: string): PokeD
     items: pokemon.getHeldItems().map((item, idx) => exportItem(item)),
     iv_raw: exportIVs(pokemon.ivs),
     iv: formatIVs(pokemon.ivs),
-    formName: pokemon.getSpeciesForm().getSpriteAtlasPath(pokemon.gender == 1, pokemon.formIndex)
+    formName: pokemon.getSpeciesForm().getSpriteAtlasPath(false, pokemon.formIndex)
   }
 }
 /**
