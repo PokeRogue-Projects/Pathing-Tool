@@ -2098,7 +2098,7 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
     var p = m.getPokemon(scene)
     scene.getField().forEach((p2, idx) => {
       if (p == p2) {
-        console.log(m.getPokemon(scene)?.name + " (Position: " + (idx + 1) + ") has a Quick Claw")
+        if (catchDebug) console.log(m.getPokemon(scene)?.name + " (Position: " + (idx + 1) + ") has a Quick Claw")
         offset++
       }
     })
@@ -2112,11 +2112,11 @@ export function findBest(scene: BattleScene, pokemon: EnemyPokemon, override?: b
   if (scene.pokeballCounts[1] == 0 && !override) rates[1][0] = 0
   if (scene.pokeballCounts[2] == 0 && !override) rates[2][0] = 0
   if (scene.pokeballCounts[3] == 0 && !override) rates[3][0] = 0
-  console.log("Rate data [raw rate, % odds of success, crit rate, idx]")
+  if (catchDebug) console.log("Rate data [raw rate, % odds of success, crit rate, idx]")
   for (var i = 0; i < rates.length; i++) {
-    console.log(rates[i])
+    if (catchDebug) console.log(rates[i])
   }
-  console.log("Note: if middle number is less than " + critCap[0] + ", a critical capture should occur")
+  if (catchDebug) console.log("Note: if middle number is less than " + critCap[0] + ", a critical capture should occur")
   rates.sort(function(a, b) {
     return b[0] - a[0]
   })

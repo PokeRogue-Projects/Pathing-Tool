@@ -794,7 +794,7 @@ export default class PokemonSpecies extends PokemonSpeciesForm implements Locali
     }
 
     if (noEvolutionChance === 1) {
-      console.log(`No evolution, chance to evolve was ${noEvolutionChance * 100}%`);
+      //console.log(`No evolution, chance to evolve was ${noEvolutionChance * 100}%`);
       return this.speciesId;
     }
 

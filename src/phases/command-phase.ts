@@ -223,6 +223,8 @@ export class CommandPhase extends FieldPhase {
                 this.scene.currentBattle.turnCommands[this.fieldIndex - 1]!.skip = true;
               }
               success = true;
+              // Remove first pokemon's action if its there, ball overrides it.
+              LoggerTools.Actions[0] = "%SKIP";
             }
           }
         }
