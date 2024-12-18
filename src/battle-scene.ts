@@ -4,7 +4,7 @@ import Pokemon, { EnemyPokemon, PlayerPokemon } from "#app/field/pokemon";
 import PokemonSpecies, { allSpecies, getPokemonSpecies, PokemonSpeciesFilter } from "#app/data/pokemon-species";
 import { Constructor, isNullOrUndefined, randSeedInt } from "#app/utils";
 import * as Utils from "#app/utils";
-import { ConsumableModifier, ConsumablePokemonModifier, DoubleBattleChanceBoosterModifier, ExpBalanceModifier, ExpShareModifier, FusePokemonModifier, HealingBoosterModifier, Modifier, ModifierBar, ModifierPredicate, MultipleParticipantExpBonusModifier, PersistentModifier, PokemonExpBoosterModifier, PokemonFormChangeItemModifier, PokemonHeldItemModifier, PokemonHpRestoreModifier, PokemonIncrementingStatModifier, RememberMoveModifier, TerastallizeModifier, TurnHeldItemTransferModifier } from "./modifier/modifier";
+import { ConsumableModifier, ConsumablePokemonModifier, DoubleBattleChanceBoosterModifier, ExpBalanceModifier, ExpShareModifier, FusePokemonModifier, HealingBoosterModifier, HiddenAbilityRateBoosterModifier, Modifier, ModifierBar, ModifierPredicate, MoneyMultiplierModifier, MultipleParticipantExpBonusModifier, PersistentModifier, PokemonExpBoosterModifier, PokemonFormChangeItemModifier, PokemonHeldItemModifier, PokemonHpRestoreModifier, PokemonIncrementingStatModifier, RememberMoveModifier, TerastallizeModifier, TurnHeldItemTransferModifier } from "./modifier/modifier";
 import { PokeballType } from "#enums/pokeball";
 import { initCommonAnims, initMoveAnim, loadCommonAnimAssets, loadMoveAnimAssets, populateAnims } from "#app/data/battle-anims";
 import { Phase } from "#app/phase";
@@ -248,7 +248,7 @@ export default class BattleScene extends SceneBase {
   private phaseQueuePrependSpliceIndex: integer;
   private nextCommandPhaseQueue: Phase[];
 
-  private currentPhase: Phase | null;
+  public currentPhase: Phase | null;
   private standbyPhase: Phase | null;
   public field: Phaser.GameObjects.Container;
   public fieldUI: Phaser.GameObjects.Container;
@@ -1265,6 +1265,45 @@ export default class BattleScene extends SceneBase {
     this.applyModifiers(DoubleBattleChanceBoosterModifier, true, doubleChance);
     playerField.forEach(p => applyAbAttrs(DoubleBattleChanceAbAttr, p, null, false, doubleChance));
     return Math.max(doubleChance.value, 1);
+  }
+
+  InsertLure() {
+    let lure = modifierTypes.LURE().withIdFromFunc(modifierTypes.LURE).newModifier() as DoubleBattleChanceBoosterModifier
+    this.addModifier(lure, true, false, false, true);
+  }
+
+  InsertSuperLure() {
+    let super_lure = modifierTypes.SUPER_LURE().withIdFromFunc(modifierTypes.SUPER_LURE).newModifier() as DoubleBattleChanceBoosterModifier
+    this.addModifier(super_lure , true, false, false, true);
+  }
+
+  InsertMaxLure() {
+    let max_lure = modifierTypes.MAX_LURE().withIdFromFunc(modifierTypes.MAX_LURE).newModifier() as DoubleBattleChanceBoosterModifier
+    this.addModifier(max_lure , true, false, false, true);
+  }
+
+  InsertTwoLures() {
+    this.InsertLure();
+    this.InsertSuperLure();
+  }
+
+  InsertThreeLures() {
+    this.InsertLure();
+    this.InsertSuperLure();
+    this.InsertMaxLure();
+  }
+
+  InsertAbilityCharm(amount: integer) {
+    let ability_charm = modifierTypes.ABILITY_CHARM().withIdFromFunc(modifierTypes.ABILITY_CHARM).newModifier() as HiddenAbilityRateBoosterModifier
+    ability_charm.stackCount = amount;
+    this.addModifier(ability_charm, true, false, false, true);
+  }
+
+  RemoveModifiers() {
+    var mods = this.modifiers.filter(m => m instanceof HiddenAbilityRateBoosterModifier || m instanceof DoubleBattleChanceBoosterModifier);
+    mods.forEach(m => {
+      this.removeModifier(m);
+    })
   }
 
   newBattle(waveIndex?: integer, battleType?: BattleType, trainerData?: TrainerData, double?: boolean, mysteryEncounterType?: MysteryEncounterType): Battle | null {
