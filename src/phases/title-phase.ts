@@ -1,5 +1,5 @@
 import { loggedInUser } from "#app/account";
-import { BattleType } from "#app/battle";
+import Battle, { BattleType } from "#app/battle";
 import BattleScene from "#app/battle-scene";
 import { fetchDailyRunSeed, getDailyRunStarters } from "#app/data/daily-run";
 import { Gender } from "#app/data/gender";
@@ -24,6 +24,13 @@ import { SummonPhase } from "./summon-phase";
 import * as LoggerTools from "../logger";
 import { Biome } from "#app/enums/biome.js";
 import { GameDataType } from "#app/enums/game-data-type.js";
+import { Species } from "#app/enums/species.js";
+import { getPokemonNameWithAffix } from "#app/messages.js";
+import { Nature } from "#app/enums/nature.js";
+import { biomeLinks } from "#app/data/balance/biomes.js";
+import { applyAbAttrs, SyncEncounterNatureAbAttr } from "#app/data/ability.js";
+import { TrainerSlot } from "#app/data/trainer-config.js";
+import { BattleSpec } from "#app/enums/battle-spec.js";
 
 
 export class TitlePhase extends Phase {
@@ -443,6 +450,18 @@ export class TitlePhase extends Phase {
         return true;
       }
     }, {
+      label: "Scouting",
+      handler: () => {
+        this.scene.sessionSlotId = 0;
+        this.scene.gameData.loadSession(this.scene, this.scene.sessionSlotId, undefined, undefined).then((success: boolean) => {
+          this.ScoutingWithoutUI();
+        }).catch(err => {
+          console.error(err);
+          this.scene.ui.showText(i18next.t("menu:failedToLoadSession"), null);
+        });
+        return true;
+      }
+    }, {
       label: "Manage Logs",
       handler: () => {
         //return this.logRenameMenu()
@@ -681,5 +700,141 @@ export class TitlePhase extends Phase {
     }
 
     super.end();
+  }
+
+	private encounterList: string[] = [];
+  ScoutingWithoutUI() {
+    var startingBiome = this.scene.arena.biomeType
+    var output: string[][] = [];
+
+    // Run for 0,1,2,3,4 charms.
+    for (var i = 0; i < 5; i++) {
+      // Remove any lures or charms
+      this.scene.RemoveModifiers()
+
+      // Add 0 to 4 charms, depending on the loop
+      if (i > 0) this.scene.InsertAbilityCharm(i);
+
+      // Keep track of encounters, Generate Biomes and encounters
+      this.encounterList = [];
+      this.GenerateBiomes(startingBiome, 0);
+      output.push([`start0${i}`]);
+      output.push(this.encounterList)
+      output.push([`end0${i}`]);
+
+      this.encounterList = [];
+      this.scene.InsertLure();
+      this.GenerateBiomes(startingBiome, 0);
+      output.push([`start1${i}`]);
+      output.push(this.encounterList)
+      output.push([`end1${i}`]);
+
+      this.encounterList = [];
+      this.scene.InsertSuperLure();
+      this.GenerateBiomes(startingBiome, 0);
+      output.push([`start2${i}`]);
+      output.push(this.encounterList)
+      output.push([`end2${i}`]);
+
+      // Only generate wave 10 for 3 lures.
+      this.encounterList = [];
+      this.scene.InsertMaxLure();
+      this.scene.newArena(startingBiome);
+      this.scene.currentBattle.waveIndex = 9;
+      this.scene.arena.updatePoolsForTimeOfDay()
+      this.GenerateBattle();
+      output.push([`start3${i}`]);
+      output.push(this.encounterList)
+      output.push([`end3${i}`]);
+    }
+
+    console.log("All scouting data:", output);
+    this.scene.ui.showText("DONE! Copy the data from the console and then you can refresh this page.", null);
+  }
+
+  GenerateBattle(nolog: boolean = false) {
+    console.log(`%%%%%  Wave: ${this.scene.currentBattle.waveIndex}  %%%%%`)
+    var battle = this.scene.newBattle() as Battle;
+    while (LoggerTools.rarities.length > 0) {
+      LoggerTools.rarities.pop();
+    }
+    LoggerTools.rarityslot[0] = 0;
+
+    if (!nolog && battle?.trainer != null) {
+      this.encounterList.push(`Wave: ${this.scene.currentBattle.waveIndex} Biome: ${Biome[this.scene.arena.biomeType]} Trainer: ${battle.trainer.config.name}`);
+    }
+
+    battle.enemyLevels?.forEach((level, e) => {
+      if (battle.battleType === BattleType.TRAINER) {
+        battle.enemyParty[e] = battle.trainer?.genPartyMember(e)!;
+      } else {
+        LoggerTools.rarityslot[0] = e;
+        let enemySpecies = this.scene.randomSpecies(battle.waveIndex, level, true);
+        battle.enemyParty[e] = this.scene.addEnemyPokemon(enemySpecies, level, TrainerSlot.NONE, !!this.scene.getEncounterBossSegments(battle.waveIndex, level, enemySpecies));
+        if (this.scene.currentBattle.battleSpec === BattleSpec.FINAL_BOSS) {
+          battle.enemyParty[e].ivs = new Array(6).fill(31);
+        }
+        this.scene.getPlayerParty().slice(0, !battle.double ? 1 : 2).reverse().forEach(playerPokemon => {
+          applyAbAttrs(SyncEncounterNatureAbAttr, playerPokemon, null, false, battle.enemyParty[e]);
+        });
+      }
+
+      if (!nolog) {
+        var enemy = battle.enemyParty[e]
+        // Regional pokemon have the same name, instead get their atlas path.
+        if (enemy.species.speciesId > 1025) {
+          // Using nicknames here because i want the getPokemonNameWithAffix so i have Wild/Foe information
+          // Nicknames are stored in base 64? so convert btoa here
+          enemy.nickname = btoa(Species[enemy.getSpeciesForm().getSpriteAtlasPath(false, enemy.formIndex)])
+        }
+
+        // Store encounters in a list, basically CSV (uses regex in sheets), but readable as well
+        var text = `Wave: ${this.scene.currentBattle.waveIndex} Biome: ${Biome[this.scene.arena.biomeType]} Pokemon: ${getPokemonNameWithAffix(enemy)} ` +
+        `Form: ${enemy.species.forms[enemy.formIndex]?.formName} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
+        `Passive Ability: ${enemy.getPassiveAbility().name} Nature: ${Nature[enemy.nature]} Gender: ${Gender[enemy.gender]} Rarity: ${LoggerTools.rarities[e]} AbilityIndex: ${enemy.abilityIndex} ID: ${enemy.id}`;
+        this.encounterList.push(text);
+        console.log(text);
+      }
+    })
+  }
+
+  GenerateBiomes(biome: Biome, waveIndex: integer) {
+    this.scene.newArena(biome);
+    this.scene.currentBattle.waveIndex = waveIndex;
+    this.scene.arena.updatePoolsForTimeOfDay()
+
+    // Finish biome
+    for (var i = 1; i <= 10; i++) {
+        this.GenerateBattle()
+    }
+
+    // Victory
+    if (this.scene.currentBattle.waveIndex >= 50) {
+      return;
+    }
+
+    // Get next biomes by offsetting the seed to the x1 wave and then rolling for the biome selections.
+    var biomeChoices: Biome[] = [];
+    this.scene.executeWithSeedOffset(() => {
+      biomeChoices = (!Array.isArray(biomeLinks[biome])
+      ? [ biomeLinks[biome] as Biome ]
+      : biomeLinks[biome] as (Biome | [Biome, integer])[])
+      .filter((b, i) => !Array.isArray(b) || !Utils.randSeedInt(b[1], undefined, "Choosing next biome for map"))
+      .map(b => Array.isArray(b) ? b[0] : b);
+    }, waveIndex + 11);
+    console.log(biomeChoices);
+
+    // Recursively generate next biomes
+    for (var b of biomeChoices) {
+      // If waveindex is not the same anymore, that means a different path ended and we continue with a new branch
+      if (this.scene.currentBattle.waveIndex != waveIndex) {
+        // Back to x9 wave to generate the x0 wave again, that sets the correct rng
+        this.scene.newArena(biome);
+        this.scene.currentBattle.waveIndex = waveIndex + 9;
+        this.GenerateBattle(true);
+      }
+
+      this.GenerateBiomes(b, waveIndex + 10);
+    }
   }
 }
